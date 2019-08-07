@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Spark源码-streaming-00-ReceiverTracker 数据接收">
+
+
+
+
+  <meta name="keywords" content="spark,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/04/03/spark-streaming-00/">
+
+
+<meta name="description" content="问题在开始了解 Streaming 架构之前，我有下面一些思考：  如果让我自己来在 Spark RDD 的基础上封装 Streaming 应该怎么做。 我会怎们处理 Streaming 的输入部分？ 是在 RDD 的基础上进一步封装？ 还是另起炉灶？ 如果另起炉灶，那么我接受到的数据应该怎么给后续的 RDD, 形成处理的流水线？ 如果我来设计，怎么保证我接收到的数据不管异常还是宕机都不会丢失？">
+<meta name="keywords" content="spark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark源码-streaming-00-ReceiverTracker 数据接收">
+<meta property="og:url" content="http://acyouzi.com/2017/04/03/spark-streaming-00/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="问题在开始了解 Streaming 架构之前，我有下面一些思考：  如果让我自己来在 Spark RDD 的基础上封装 Streaming 应该怎么做。 我会怎们处理 Streaming 的输入部分？ 是在 RDD 的基础上进一步封装？ 还是另起炉灶？ 如果另起炉灶，那么我接受到的数据应该怎么给后续的 RDD, 形成处理的流水线？ 如果我来设计，怎么保证我接收到的数据不管异常还是宕机都不会丢失？">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:56:55.843Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark源码-streaming-00-ReceiverTracker 数据接收">
+<meta name="twitter:description" content="问题在开始了解 Streaming 架构之前，我有下面一些思考：  如果让我自己来在 Spark RDD 的基础上封装 Streaming 应该怎么做。 我会怎们处理 Streaming 的输入部分？ 是在 RDD 的基础上进一步封装？ 还是另起炉灶？ 如果另起炉灶，那么我接受到的数据应该怎么给后续的 RDD, 形成处理的流水线？ 如果我来设计，怎么保证我接收到的数据不管异常还是宕机都不会丢失？">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Spark源码-streaming-00-ReceiverTracker 数据接收 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Spark源码-streaming-00-ReceiverTracker 数据接收
+        
+      </h1>
+
+      <time class="post-time">
+          Apr 03 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在开始了解 Streaming 架构之前，我有下面一些思考：</p>
+<ol>
+<li>如果让我自己来在 Spark RDD 的基础上封装 Streaming 应该怎么做。</li>
+<li>我会怎们处理 Streaming 的输入部分？ 是在 RDD 的基础上进一步封装？ 还是另起炉灶？</li>
+<li>如果另起炉灶，那么我接受到的数据应该怎么给后续的 RDD, 形成处理的流水线？</li>
+<li>如果我来设计，怎么保证我接收到的数据不管异常还是宕机都不会丢失？</li>
+<li>如果我依托于 RDD 实现 Streaming，我的数据接收部分与后续数据处理部分应该是什么样的关系？</li>
+<li>我的消息来不及处理产生堆积怎么办？</li>
+<li>我的设计方式会在哪些地方出问题？或者说不适用于什么样的场景？</li>
+</ol>
+<p>我觉得在了解 Streaming 之前可以先自己想一想上面的问题, 然后对比一下 Steaming 是怎么做的，挺有意思的. </p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>StreamingContext 使用 JobScheduler 负责总体调度</li>
+<li>JobScheduler 使用 receiverTracker 启动 receiver job 负责接收输入的数据，jobGenerator 负责生成数据处理的 job</li>
+<li>receiverTracker 实际上是提交了一个 Job 来启动 receiver 接收数据</li>
+<li>receiverTracker 提交的 job 中使用 ReceiverSupervisorImpl 来负载数据接并管 block, 同时向 Driver 上的 receiverTracker 报告状态</li>
+<li>ReceiverSupervisorImpl 使用 BlockGenerator 把接收的数据分块保存，spark.streaming.blockInterval 用于每个多少毫秒的数据保存成一个块</li>
+<li>BlockGenerator 使用使用 Guava 的 RateLimiter 影响消息接收速率</li>
+</ol>
+<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>看下面的例子：</p>
+<pre><code>val conf = new SparkConf().setAppName(&quot;spark-test&quot;).setMaster(&quot;local[2]&quot;)
+val ssc= new StreamingContext(conf,Seconds(1))
+val lines = ssc.socketTextStream(&quot;192.168.192.132&quot;, 9999)
+val words = lines.flatMap(_.split(&quot; &quot;))
+val pairs = words.map(word =&gt; (word, 1))
+val wordCounts = pairs.reduceByKey(_ + _)
+wordCounts.print()
+ssc.start()
+ssc.awaitTermination()</code></pre><ol>
+<li><p>StreamingContext 对象创建，这里面做的比较重要的几件事情有：</p>
+<ul>
+<li><p>传入或则创建 SparkContext</p>
+<pre><code>private[streaming] val sc: SparkContext = {
+  if (_sc != null) {
+    _sc
+  } else if (isCheckpointPresent) {
+    SparkContext.getOrCreate(_cp.createSparkConf())
+  } else {
+    throw new SparkException(&quot;Cannot create StreamingContext without a SparkContext&quot;)
+  }
+}        </code></pre></li>
+<li><p>创建 DStreamGraph, 这个类里面有 inputStreams 和 outputStreams 就是也就是输入和输出的 DStream. 比如上面例子中最后的 print 就会把自身的引用(ForEachDStream)注册到 DStreamGraph 的 outputStreams 里面. 同时这个类还用来生成 job, 后面会详细写到</p>
+<pre><code>private[streaming] val graph: DStreamGraph = {
+  if (isCheckpointPresent) {
+    _cp.graph.setContext(this)
+    _cp.graph.restoreCheckpointData()
+    _cp.graph
+  } else {
+    require(_batchDur != null, &quot;Batch duration for StreamingContext cannot be null&quot;)
+    val newGraph = new DStreamGraph()
+    newGraph.setBatchDuration(_batchDur)
+    newGraph
+  }
+}</code></pre></li>
+<li><p>创建 JobScheduler 用于任务调度(内部 receiverTracker 负责 receiver 调度, jobGenerator 负责 job 生成)</p>
+<pre><code>private[streaming] val scheduler = new JobScheduler(this)</code></pre></li>
+</ul>
+</li>
+<li><p>然后在 ssc.socketTextStream 创建 DStream 的时候返回的是一个 SocketInputDStream, 这个类是 InputDStream 的子类, 而在 InputDStream 中会把自己的引用注册到前面提到的 DStreamGraph 的 inputStreams 中. 下面来看 ssc.start() 方法</p>
+<pre><code>def start(): Unit = synchronized {
+  state match {
+    // state 在 streamingContext 初始化时被设置为了 INITIALIZED 
+    case INITIALIZED =&gt;
+      startSite.set(DStream.getCreationSite())
+      StreamingContext.ACTIVATION_LOCK.synchronized {
+        StreamingContext.assertNoOtherContextIsActive()
+        try {
+          // 这个方法就是做了一些配置方面的检查，可以自己看看
+          validate()
+
+          // 这种写法应该很熟悉吧，科里化封装了线程启动的逻辑
+          // 下面会看一下 scheduler.start() 方法
+          ThreadUtils.runInNewThread(&quot;streaming-start&quot;) {
+            sparkContext.setCallSite(startSite.get)
+            sparkContext.clearJobGroup()
+            sparkContext.setLocalProperty(SparkContext.SPARK_JOB_INTERRUPT_ON_CANCEL, &quot;false&quot;)
+            savedProperties.set(SerializationUtils.clone(sparkContext.localProperties.get()))
+            scheduler.start()
+          }
+          state = StreamingContextState.ACTIVE
+        } catch {
+          case NonFatal(e) =&gt;
+            logError(&quot;Error starting the context, marking it as stopped&quot;, e)
+            scheduler.stop(false)
+            state = StreamingContextState.STOPPED
+            throw e
+        }
+        StreamingContext.setActiveContext(this)
+      }
+      logDebug(&quot;Adding shutdown hook&quot;)
+      // 注册钩子函数，在虚拟机正常结束时会调用
+      // 然后调用 stopOnShutdown 方法，最终调用
+      // scheduler.stop(stopGracefully) ,重点是 stopGracefully
+      // spark.streaming.stopGracefullyOnShutdown 可以是设置是否等到全部数据执行完再结束。
+      // 默认是 false
+      shutdownHookRef = ShutdownHookManager.addShutdownHook(
+        StreamingContext.SHUTDOWN_HOOK_PRIORITY)(stopOnShutdown)
+      // Registering Streaming Metrics at the start of the StreamingContext
+      assert(env.metricsSystem != null)
+      env.metricsSystem.registerSource(streamingSource)
+      uiTab.foreach(_.attach())
+      logInfo(&quot;StreamingContext started&quot;)
+    case ACTIVE =&gt;
+      logWarning(&quot;StreamingContext has already been started&quot;)
+    case STOPPED =&gt;
+      throw new IllegalStateException(&quot;StreamingContext has already been stopped&quot;)
+  }
+}</code></pre></li>
+<li><p>scheduler.start()</p>
+<pre><code>def start(): Unit = synchronized {
+  if (eventLoop != null) return // scheduler has already been started
+  // 启动一个事件处理线程用于处理 Job 相关事件
+  logDebug(&quot;Starting JobScheduler&quot;)
+  eventLoop = new EventLoop[JobSchedulerEvent](&quot;JobScheduler&quot;) {
+    override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
+
+    override protected def onError(e: Throwable): Unit = reportError(&quot;Error in job scheduler&quot;, e)
+  }
+  eventLoop.start()
+
+  // attach rate controllers of input streams to receive batch completion updates
+  // 添加 inputDStream 的速率控制器到 streaming context
+  // 用于在 job 完成后调节数据接收速率
+  for {
+    inputDStream &lt;- ssc.graph.getInputStreams
+    rateController &lt;- inputDStream.rateController
+  } ssc.addStreamingListener(rateController)
+
+  listenerBus.start()
+  // receiverTracker 是个比较重要的组件
+  // 用于控制 InputDStream 的执行
+  receiverTracker = new ReceiverTracker(ssc)
+  inputInfoTracker = new InputInfoTracker(ssc)
+
+  val executorAllocClient: ExecutorAllocationClient = ssc.sparkContext.schedulerBackend match {
+    case b: ExecutorAllocationClient =&gt; b.asInstanceOf[ExecutorAllocationClient]
+    case _ =&gt; null
+  }
+
+  executorAllocationManager = ExecutorAllocationManager.createIfEnabled(
+    executorAllocClient,
+    receiverTracker,
+    ssc.conf,
+    ssc.graph.batchDuration.milliseconds,
+    clock)
+  executorAllocationManager.foreach(ssc.addStreamingListener)
+  // 下面看这段代码执行
+  receiverTracker.start()
+  jobGenerator.start()
+  executorAllocationManager.foreach(_.start())
+  logInfo(&quot;Started JobScheduler&quot;)
+}</code></pre></li>
+<li><p>receiverTracker.start() , 好吧其实这里面没有太多东西</p>
+<pre><code>def start(): Unit = synchronized {
+  if (isTrackerStarted) {
+    throw new SparkException(&quot;ReceiverTracker already started&quot;)
+  }
+
+  if (!receiverInputStreams.isEmpty) {
+    endpoint = ssc.env.rpcEnv.setupEndpoint(
+      &quot;ReceiverTracker&quot;, new ReceiverTrackerEndpoint(ssc.env.rpcEnv))
+
+    // launchReceivers() 中发送了 StartAllReceivers 消息
+    // StartAllReceivers 在 ReceiverTrackerEndpoint#receive 方法中
+    if (!skipReceiverLaunch) launchReceivers()
+    logInfo(&quot;ReceiverTracker started&quot;)
+    trackerState = Started
+  }
+}</code></pre></li>
+<li><p>下面就是 Receivers 比较关键的部分了</p>
+<pre><code>case StartAllReceivers(receivers) =&gt;
+  // 计算位置偏好
+  // 里边会用到一个 preferredLocation 函数，但是我找不到具体实现在哪里 
+  val scheduledLocations = schedulingPolicy.scheduleReceivers(receivers,      getExecutors)
+  // 对每个 receivers 依次分配
+  for (receiver &lt;- receivers) {
+    val executors = scheduledLocations(receiver.streamId)
+    updateReceiverScheduledExecutors(receiver.streamId, executors)
+    receiverPreferredLocations(receiver.streamId) =    receiver.preferredLocation
+    // 下面来看 startReceiver 方法
+    startReceiver(receiver, executors)
+  }</code></pre></li>
+<li><p>startReceiver() 是一个很长的方法，可以分为下面几个重要部分：</p>
+<ul>
+<li><p>startReceiverFunc 这个函数就像是 spark core 里面 action 操作中传入的函数，这个函数是要在 worker 上运行的。</p>
+<pre><code>// Function to start the receiver on the worker node
+val startReceiverFunc: Iterator[Receiver[_]] =&gt; Unit =
+(iterator: Iterator[Receiver[_]]) =&gt; {
+  if (!iterator.hasNext) {
+    throw new SparkException(
+      &quot;Could not start receiver as object not found.&quot;)
+  }
+  if (TaskContext.get().attemptNumber() == 0) {
+    val receiver = iterator.next()
+    assert(iterator.hasNext == false)
+    val supervisor = new ReceiverSupervisorImpl(
+      receiver, SparkEnv.get, serializableHadoopConf.value, checkpointDirOption)
+    supervisor.start()
+    supervisor.awaitTermination()
+  } else {
+    // It&apos;s restarted by TaskScheduler, but we want to reschedule it again. So exit it.
+  }
+}</code></pre></li>
+<li><p>创建 RDD , 就是随便搞了个 RDD(ParallelCollectionRDD),貌似都没啥用处</p>
+<pre><code>val receiverRDD: RDD[Receiver[_]] =
+  if (scheduledLocations.isEmpty) {
+    ssc.sc.makeRDD(Seq(receiver), 1)
+  } else {
+    val preferredLocations = scheduledLocations.map(_.toString).distinct
+    ssc.sc.makeRDD(Seq(receiver -&gt; preferredLocations))
+  }</code></pre></li>
+<li><p>提交 Job, 到这里就是纯正的 spark rdd 任务流程了</p>
+<pre><code>ssc.sparkContext.setJobDescription(s&quot;Streaming job running receiver $receiverId&quot;)
+ssc.sparkContext.setCallSite(Option(ssc.getStartSite()).getOrElse(Utils.getCallSite()))
+
+val future = ssc.sparkContext.submitJob[Receiver[_], Unit, Unit](
+  receiverRDD, startReceiverFunc, Seq(0), (_, _) =&gt; Unit, ())</code></pre></li>
+</ul>
+</li>
+<li><p>具体 job 怎么提交怎么调度到 worker 上，然后又怎么执行起来就不细说了，下面看一下上面提到的 startReceiverFunc，主要就是如下几句：</p>
+<pre><code>val receiver = iterator.next()
+assert(iterator.hasNext == false)
+val supervisor = new ReceiverSupervisorImpl(
+  receiver, SparkEnv.get, serializableHadoopConf.value, checkpointDirOption)
+supervisor.start()
+supervisor.awaitTermination()</code></pre></li>
+<li><p>在 ReceiverSupervisorImpl 的构造方法中几个比较重要的点是：</p>
+<ul>
+<li><p>receivedBlockHandler, 根据配置不同有 WAL 和 普通类型</p>
+<pre><code>private val receivedBlockHandler: ReceivedBlockHandler = {
+  // 要使用预写日志需要：
+  // 1. 调用StreamingContext的checkpoint()方法设置一个checkpoint目录
+  // 2. spark.streaming.receiver.writeAheadLog.enable 参数设置为 true
+  if (WriteAheadLogUtils.enableReceiverLog(env.conf)) {
+    if (checkpointDirOption.isEmpty) {
+      throw new SparkException(
+        &quot;Cannot enable receiver write-ahead log without checkpoint directory set. &quot; +
+          &quot;Please use streamingContext.checkpoint() to set the checkpoint directory. &quot; +
+          &quot;See documentation for more details.&quot;)
+    }
+    new WriteAheadLogBasedBlockHandler(env.blockManager, env.serializerManager, receiver.streamId,
+      receiver.storageLevel, env.conf, hadoopConf, checkpointDirOption.get)
+  } else {
+    new BlockManagerBasedBlockHandler(env.blockManager, receiver.storageLevel)
+  }
+}</code></pre></li>
+<li><p>ReceiverTrackerRef &amp;&amp; ReceiverEndpoint</p>
+<pre><code>// 向 ReceiverTracker 发送消息的对象
+private val trackerEndpoint = RpcUtils.makeDriverRef(&quot;ReceiverTracker&quot;, env.conf, env.rpcEnv)
+// 处理 ReceiverTracker 消息的监听
+private val endpoint = env.rpcEnv.setupEndpoint(
+  &quot;Receiver-&quot; + streamId + &quot;-&quot; + System.currentTimeMillis(), new ThreadSafeRpcEndpoint {
+    override val rpcEnv: RpcEnv = env.rpcEnv
+
+    override def receive: PartialFunction[Any, Unit] = {
+      case StopReceiver =&gt;
+        logInfo(&quot;Received stop signal&quot;)
+        ReceiverSupervisorImpl.this.stop(&quot;Stopped by driver&quot;, None)
+      case CleanupOldBlocks(threshTime) =&gt;
+        logDebug(&quot;Received delete old batch signal&quot;)
+        cleanupOldBlocks(threshTime)
+      case UpdateRateLimit(eps) =&gt;
+        logInfo(s&quot;Received a new rate limit: $eps.&quot;)
+        registeredBlockGenerators.asScala.foreach { bg =&gt;
+          bg.updateRate(eps)
+        }
+    }
+  })</code></pre></li>
+<li><p>BlockGenerator</p>
+<pre><code>private val registeredBlockGenerators = new ConcurrentLinkedQueue[BlockGenerator]()
+
+/** Divides received data records into data blocks for pushing in BlockManager. */
+private val defaultBlockGeneratorListener = new BlockGeneratorListener {
+  def onAddData(data: Any, metadata: Any): Unit = { }
+
+  def onGenerateBlock(blockId: StreamBlockId): Unit = { }
+
+  def onError(message: String, throwable: Throwable) {
+    reportError(message, throwable)
+  }
+
+  def onPushBlock(blockId: StreamBlockId, arrayBuffer: ArrayBuffer[_]) {
+    pushArrayBuffer(arrayBuffer, None, Some(blockId))
+  }
+}
+private val defaultBlockGenerator = createBlockGenerator(defaultBlockGeneratorListener)</code></pre></li>
+</ul>
+</li>
+<li><p>下面来看 supervisor.start()</p>
+<pre><code>def start() {
+  // 调用 BlockGenerator 的 start
+  onStart()
+  // 启动消息接收的服务，本例中是 SocketReceiver
+  startReceiver()
+}
+
+override protected def onStart() {
+  registeredBlockGenerators.asScala.foreach { _.start() }
+}
+
+/** Start receiver */
+def startReceiver(): Unit = synchronized {
+  try {
+    // onReceiverStart 是在跟 ReceiverTracker 通信
+    // 注册 Receiver
+    if (onReceiverStart()) {
+      logInfo(s&quot;Starting receiver $streamId&quot;)
+      receiverState = Started
+      receiver.onStart()
+      logInfo(s&quot;Called receiver $streamId onStart&quot;)
+    } else {
+      // The driver refused us
+      stop(&quot;Registered unsuccessfully because Driver refused to start receiver &quot; + streamId, None)
+    }
+  } catch {
+    case NonFatal(t) =&gt;
+      stop(&quot;Error starting receiver &quot; + streamId, Some(t))
+  }
+}
+
+override protected def onReceiverStart(): Boolean = {
+  val msg = RegisterReceiver(
+    streamId, receiver.getClass.getSimpleName, host, executorId, endpoint)
+  trackerEndpoint.askWithRetry[Boolean](msg)
+}</code></pre></li>
+<li><p>SocketReceiver 中的几个重要方法，可以看到就是 java 的 socket 编程</p>
+<pre><code>def onStart() {
+  logInfo(s&quot;Connecting to $host:$port&quot;)
+  try {
+    socket = new Socket(host, port)
+  } catch {
+    case e: ConnectException =&gt;
+      restart(s&quot;Error connecting to $host:$port&quot;, e)
+      return
+  }
+  logInfo(s&quot;Connected to $host:$port&quot;)
+
+  // 启动新的线程，调用 receive
+  // 到这里就可以接收消息了
+  new Thread(&quot;Socket Receiver&quot;) {
+    setDaemon(true)
+    override def run() { receive() }
+  }.start()
+}
+/** Create a socket connection and receive data until receiver is stopped */
+def receive() {
+  try {
+    // bytesToObjects 在本例中是 reciver 构造时传入的 bytesToLines
+    val iterator = bytesToObjects(socket.getInputStream())
+    while(!isStopped &amp;&amp; iterator.hasNext) {
+      // 存储，下面看这个方法
+      store(iterator.next())
+    }
+    if (!isStopped()) {
+      restart(&quot;Socket data stream had no more data&quot;)
+    } else {
+      logInfo(&quot;Stopped receiving&quot;)
+    }
+  } catch {
+    case NonFatal(e) =&gt;
+      logWarning(&quot;Error receiving data&quot;, e)
+      restart(&quot;Error receiving data&quot;, e)
+  } finally {
+    onStop()
+  }
+}</code></pre></li>
+<li><p>store 方法最终会调用到 BlockGenerator#addData() 方法, 所以先来看看 BlockGenerator 的构造函数中做的事情：</p>
+<ul>
+<li><p>启动定时转储的线程，spark.streaming.blockInterval 每隔多少毫秒生成一个 block, 默认是 200 秒</p>
+<pre><code>private val blockIntervalMs = conf.getTimeAsMs(&quot;spark.streaming.blockInterval&quot;, &quot;200ms&quot;)
+require(blockIntervalMs &gt; 0, s&quot;&apos;spark.streaming.blockInterval&apos; should be a positive value&quot;)
+// RecurringTimer 会定期调用 updateCurrentBuffer 函数
+// 就是简单的循环，阻塞，然后再循环
+// 下面看一下 updateCurrentBuffer 方法
+private val blockIntervalTimer =
+  new RecurringTimer(clock, blockIntervalMs, updateCurrentBuffer, &quot;BlockGenerator&quot;)
+
+//  
+private def updateCurrentBuffer(time: Long): Unit = {
+  try {
+    var newBlock: Block = null
+    synchronized {
+      if (currentBuffer.nonEmpty) {
+        // 更新 currentBuffer 
+        val newBlockBuffer = currentBuffer
+        currentBuffer = new ArrayBuffer[Any]
+        val blockId = StreamBlockId(receiverId, time - blockIntervalMs)
+        listener.onGenerateBlock(blockId)
+        newBlock = new Block(blockId, newBlockBuffer)
+      }
+    }
+    // 把需要生成 block 的数据放到队列里面
+    if (newBlock != null) {
+      blocksForPushing.put(newBlock)  // put is blocking when queue is full
+    }
+  } catch {
+    case ie: InterruptedException =&gt;
+      logInfo(&quot;Block updating timer thread was interrupted&quot;)
+    case e: Exception =&gt;
+      reportError(&quot;Error in block updating thread&quot;, e)
+  }
+}</code></pre></li>
+<li><p>实例化 blocksForPushing 队列，默认大小是 10</p>
+<pre><code>private val blockQueueSize = conf.getInt(&quot;spark.streaming.blockQueueSize&quot;, 10)
+private val blocksForPushing = new ArrayBlockingQueue[Block](blockQueueSize)</code></pre></li>
+<li><p>blockPushingThread 用于运行 keepPushingBlocks 函数，循环把 blocksForPushing 中的数据消费掉</p>
+<pre><code>private val blockPushingThread = new Thread() { override def run() {   keepPushingBlocks() } }
+
+private def keepPushingBlocks() {
+  logInfo(&quot;Started block pushing thread&quot;)
+
+  def areBlocksBeingGenerated: Boolean = synchronized {
+    state != StoppedGeneratingBlocks
+  }
+
+  try {
+    // 循环消费数据
+    // pushBlock 最后调用 BlockGeneratorListener#onPushBlock 方法
+    while (areBlocksBeingGenerated) {
+      Option(blocksForPushing.poll(10, TimeUnit.MILLISECONDS)) match {
+        case Some(block) =&gt; pushBlock(block)
+        case None =&gt;
+      }
+    }
+
+    // 关闭时，保证先存储完队列中的数据
+    logInfo(&quot;Pushing out the last &quot; + blocksForPushing.size() + &quot; blocks&quot;)
+    while (!blocksForPushing.isEmpty) {
+      val block = blocksForPushing.take()
+      logDebug(s&quot;Pushing block $block&quot;)
+      pushBlock(block)
+      logInfo(&quot;Blocks left to push &quot; + blocksForPushing.size())
+    }
+    logInfo(&quot;Stopped block pushing thread&quot;)
+  } catch {
+    case ie: InterruptedException =&gt;
+      logInfo(&quot;Block pushing thread was interrupted&quot;)
+    case e: Exception =&gt;
+      reportError(&quot;Error in block pushing thread&quot;, e)
+  }
+}</code></pre></li>
+</ul>
+</li>
+<li><p>pushBlock 会调用 BlockGeneratorListener#onPushBlock 方法，最终会调用 ReceiverSupervisorImpl#pushAndReportBlock 方法.</p>
+<pre><code>def pushAndReportBlock(
+    receivedBlock: ReceivedBlock,
+    metadataOption: Option[Any],
+    blockIdOption: Option[StreamBlockId]
+  ) {
+  val blockId = blockIdOption.getOrElse(nextBlockId)
+  val time = System.currentTimeMillis
+  // 这里的 receivedBlockHandler 底层就是交给 blockManager 来存储了
+  val blockStoreResult = receivedBlockHandler.storeBlock(blockId, receivedBlock)
+  logDebug(s&quot;Pushed block $blockId in ${(System.currentTimeMillis - time)} ms&quot;)
+  val numRecords = blockStoreResult.numRecords
+  val blockInfo = ReceivedBlockInfo(streamId, numRecords, metadataOption, blockStoreResult)
+  trackerEndpoint.askWithRetry[Boolean](AddBlock(blockInfo))
+  logDebug(s&quot;Reported block $blockId&quot;)
+}</code></pre></li>
+</ol>
+<ol start="12">
+<li><p>下面再来看看 BlockGenerator#addData 方法：</p>
+<pre><code>def addData(data: Any): Unit = {
+  if (state == Active) {
+    // 此方法用于限流
+    waitToPush()
+    synchronized {
+      if (state == Active) {
+        currentBuffer += data
+      } else {
+        throw new SparkException(
+          &quot;Cannot add data as BlockGenerator has not been started or has been stopped&quot;)
+      }
+    }
+  } else {
+    throw new SparkException(
+      &quot;Cannot add data as BlockGenerator has not been started or has been stopped&quot;)
+  }
+}</code></pre><p>RateLimiter 的部分代码 </p>
+<pre><code>private val maxRateLimit = conf.getLong(&quot;spark.streaming.receiver.maxRate&quot;, Long.MaxValue)
+// spark.streaming.backpressure.initialRate 参数控制
+// Guava 是 google 的工具类库(令牌桶算法)
+// 参考:
+// http://ifeve.com/guava-ratelimiter/  
+// http://xiaobaoqiu.github.io/blog/2015/07/02/ratelimiter/
+private lazy val rateLimiter = GuavaRateLimiter.create(getInitialRateLimit().toDouble)
+
+def waitToPush() {
+  // 阻塞，直到拿到令牌返回
+  rateLimiter.acquire()
+}</code></pre></li>
+<li><p>从前面第 4 步开始到第 12 步都是在讲 receiverTracker.start()，下一篇博客开始看第三步的 jobGenerator.start() 部分.</p>
+</li>
+</ol>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/spark/">spark</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/04/05/spark-streaming-01/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Spark源码-streaming-01-Job 生成</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/03/26/spark-core-05/">
+        <span class="next-text nav-default">Spark源码-Core-05-persist&&checkpoint&&blockManager</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

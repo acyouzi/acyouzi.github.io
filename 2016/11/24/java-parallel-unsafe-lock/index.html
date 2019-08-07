@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="LockSupport Atomic 包 和 Unsafe 类">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/24/java-parallel-unsafe-lock/">
+
+
+<meta name="description" content="LockSupport 基本使用unpark 操作调用之前一定要确保线程是可用的，调用 park 操作时如果 permit 可用会直接返回(在 park 之前调用 unpark 的情况)，否则线程挂起等待。 public static Runnable run = ()-&amp;gt;{     System.out.println(&amp;quot;park&amp;quot;);     LockSupport.">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LockSupport Atomic 包 和 Unsafe 类">
+<meta property="og:url" content="http://acyouzi.com/2016/11/24/java-parallel-unsafe-lock/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="LockSupport 基本使用unpark 操作调用之前一定要确保线程是可用的，调用 park 操作时如果 permit 可用会直接返回(在 park 之前调用 unpark 的情况)，否则线程挂起等待。 public static Runnable run = ()-&amp;gt;{     System.out.println(&amp;quot;park&amp;quot;);     LockSupport.">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:00:09.449Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LockSupport Atomic 包 和 Unsafe 类">
+<meta name="twitter:description" content="LockSupport 基本使用unpark 操作调用之前一定要确保线程是可用的，调用 park 操作时如果 permit 可用会直接返回(在 park 之前调用 unpark 的情况)，否则线程挂起等待。 public static Runnable run = ()-&amp;gt;{     System.out.println(&amp;quot;park&amp;quot;);     LockSupport.">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> LockSupport Atomic 包 和 Unsafe 类 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          LockSupport Atomic 包 和 Unsafe 类
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 24 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="LockSupport-基本使用"><a href="#LockSupport-基本使用" class="headerlink" title="LockSupport 基本使用"></a>LockSupport 基本使用</h3><p>unpark 操作调用之前一定要确保线程是可用的，调用 park 操作时如果 permit 可用会直接返回(在 park 之前调用 unpark 的情况)，否则线程挂起等待。</p>
+<pre><code>public static Runnable run = ()-&gt;{
+    System.out.println(&quot;park&quot;);
+    LockSupport.park();
+    System.out.println(&quot;unpark&quot;);
+};
+public static void main(String[] args) {
+    Thread t = new Thread(run);
+    t.start();
+    LockSupport.unpark(t);
+}</code></pre><ol>
+<li>LockSupport 不能实例化，调用 UNSAFE 类实现功能</li>
+<li>UNSAFE.unpark 操作不太安全，如果在线程没有启动的时候就调用 UNSAFE.unpark 实际上不会起任何效果，这时如果线程执行调用了 LockSupport.park 就只能一直锁在那里了。</li>
+</ol>
+<h4 id="LockSupport-中断测试"><a href="#LockSupport-中断测试" class="headerlink" title="LockSupport 中断测试"></a>LockSupport 中断测试</h4><pre><code>public static Runnable run = ()-&gt;{
+    long t = System.currentTimeMillis();
+    System.out.println(&quot;park&quot;);
+    LockSupport.park();
+    if(Thread.interrupted()){
+        System.out.println(  System.currentTimeMillis() - t );
+    }else {
+        System.out.println(&quot;unpark&quot;);
+        System.out.println(  System.currentTimeMillis() - t );
+    }
+};
+public static void main(String[] args) throws InterruptedException {
+    Thread t = new Thread(run);
+    t.start();
+    Thread.sleep(3000);
+    t.interrupt();
+    Thread.sleep(5000);
+    LockSupport.unpark(t);
+}</code></pre><p>下面的代码输出的时间是 3000 ，这说明 park 阻塞时如果发生 interrupt ,阻塞会立即结束。但是不会抛出任何异常，所以在使用 park 时一般需要随后使用 Thread.interrupted() 或者 Thread.currentThread().isInterrupted() 判断是否发生中断。</p>
+<h3 id="Atomic-包使用"><a href="#Atomic-包使用" class="headerlink" title="Atomic 包使用"></a>Atomic 包使用</h3><ol>
+<li><p>基本类型原子更新， AtomicBoolean AtomicInteger AtomicLong ，用法示例：</p>
+<pre><code>AtomicInteger i = new AtomicInteger(0);
+i.compareAndSet(i.get(),1);
+System.out.println(i.get());
+System.out.println(i.getAndIncrement());
+System.out.println(i.getAndAccumulate(3,(x,y)-&gt;x+y));
+System.out.println(i.get());</code></pre></li>
+<li><p>数组类型原子更新，AtomicIntegerArray AtomicLongArray AtomicReferenceArray，用法示例：</p>
+<pre><code>int[] i = new int[] {0,0,0};
+AtomicIntegerArray ai = new AtomicIntegerArray(i);
+ai.compareAndSet(0,0,3);
+ai.compareAndSet(1,0,2);
+ai.compareAndSet(2,0,1);
+System.out.println(ai.get(0) +&quot;,&quot;+ ai.get(1) +&quot;,&quot;+ ai.get(2));</code></pre><p> 创建对象时传入数组实际上做了 this.array = array.clone() 这样一个操作，所以 AtomicIntegerArray 的操作并不会影响原来的数组。</p>
+</li>
+<li><p>引用类型原子更新，包括：AtomicReference  AtomicMarkableReference AtomicStampedReference</p>
+<pre><code>public static class ASRTest{
+    public int i;
+    public ASRTest(int arg) {
+        this.i = arg;
+    }
+}
+public static void main(String[] args) throws Exception {
+    ASRTest asr = new ASRTest(0);
+    AtomicStampedReference stampedReference = new AtomicStampedReference(asr,0);
+    stampedReference.compareAndSet(asr,new ASRTest(10),0,1);
+    System.out.println(stampedReference.getStamp());
+}</code></pre></li>
+</ol>
+<ol start="4">
+<li><p>对象字段原子更新，包括：AtomicIntegerFieldUpdater AtomicLongFieldUpdater AtomicReferenceFieldUpdater</p>
+<pre><code>public static class ASRTest{
+    public volatile Integer i;
+    public ASRTest(int arg) {
+        this.i = arg;
+    }
+}
+public static void main(String[] args) throws Exception {
+    AtomicReferenceFieldUpdater updater = AtomicReferenceFieldUpdater.newUpdater(ASRTest.class,Integer.class,&quot;i&quot;);
+    ASRTest test = new ASRTest(0);
+    updater.compareAndSet(test,0,10);
+    System.out.println(test.i);
+}</code></pre></li>
+</ol>
+<h4 id="cas-操作实现"><a href="#cas-操作实现" class="headerlink" title="cas 操作实现"></a>cas 操作实现</h4><p>Atomic 底层也是使用 Unsafe 的方法，所有方法的实现都与如下的代码类似。</p>
+<pre><code>public class LockSupportTest {
+    private volatile int state = 0;
+    public void print(){
+        System.out.println(state);
+    }
+    public static void main(String[] args) throws Exception {
+        Field filed = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
+        filed.setAccessible(true);
+        Unsafe unsafe = (Unsafe) filed.get(null);
+
+        long offset = unsafe.objectFieldOffset(LockSupportTest.class.getDeclaredField(&quot;state&quot;));
+        LockSupportTest test = new LockSupportTest();
+        test.print();
+        unsafe.compareAndSwapInt(test,offset,0,3);
+        test.print();
+    }
+}</code></pre><h3 id="Unsafe-还能做的事情"><a href="#Unsafe-还能做的事情" class="headerlink" title="Unsafe 还能做的事情"></a>Unsafe 还能做的事情</h3><p>上面的 park/unpark 和 cas 是 Unsafe 类应用在多线程同步例子，另外 Unsafe 类还能完成很多其他的功能。</p>
+<ol>
+<li><p>直接操作内存，putxxx getxxx putXxxVolatile getXxxVolatile </p>
+</li>
+<li><p>申请释放内存 allocateMemory reallocateMemory freeMemory copyMemory </p>
+<pre><code>Field filed = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
+filed.setAccessible(true);
+Unsafe unsafe = (Unsafe) filed.get(null);
+
+long addr = unsafe.allocateMemory(32*8);
+unsafe.putInt(addr,15);
+System.out.println(unsafe.getInt(addr));
+unsafe.freeMemory(addr);</code></pre></li>
+<li><p>defineClass defineAnonymousClass allocateInstance ensureClassInitialized</p>
+</li>
+<li><p>loadFence storeFence fullFence 用于防止指令重排造成的问题</p>
+</li>
+</ol>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/25/java-parallel-threadpool/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">线程池 ThreadPoolExecutor 的使用和实现分析</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/23/java-parellel-countdownlatch-cyclicbarrier/">
+        <span class="next-text nav-default">CountDownLatch 和 CyclicBarrier</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

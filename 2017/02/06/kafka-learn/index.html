@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="kafka 相关概念和使用">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/02/06/kafka-learn/">
+
+
+<meta name="description" content="介绍kafka 是一个开源消息系统，使用 scala 编写。类似于 JMS , 但不是 JMS 的规范实现。 相关概念 Producer  Consumer  Topic   一个特定的主题，或者理解为存储相同消息类型的一个或多个队列  Consumer Group  一个 topic 可以有多个 group, 每个 group 可以有一到多个 consumer. topic 的消息在逻辑上会复制">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka 相关概念和使用">
+<meta property="og:url" content="http://acyouzi.com/2017/02/06/kafka-learn/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="介绍kafka 是一个开源消息系统，使用 scala 编写。类似于 JMS , 但不是 JMS 的规范实现。 相关概念 Producer  Consumer  Topic   一个特定的主题，或者理解为存储相同消息类型的一个或多个队列  Consumer Group  一个 topic 可以有多个 group, 每个 group 可以有一到多个 consumer. topic 的消息在逻辑上会复制">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:58:30.181Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kafka 相关概念和使用">
+<meta name="twitter:description" content="介绍kafka 是一个开源消息系统，使用 scala 编写。类似于 JMS , 但不是 JMS 的规范实现。 相关概念 Producer  Consumer  Topic   一个特定的主题，或者理解为存储相同消息类型的一个或多个队列  Consumer Group  一个 topic 可以有多个 group, 每个 group 可以有一到多个 consumer. topic 的消息在逻辑上会复制">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> kafka 相关概念和使用 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          kafka 相关概念和使用
+        
+      </h1>
+
+      <time class="post-time">
+          Feb 06 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>kafka 是一个开源消息系统，使用 scala 编写。类似于 JMS , 但不是 JMS 的规范实现。</p>
+<h2 id="相关概念"><a href="#相关概念" class="headerlink" title="相关概念"></a>相关概念</h2><ol>
+<li><p>Producer</p>
+</li>
+<li><p>Consumer</p>
+</li>
+<li><p>Topic </p>
+<p> 一个特定的主题，或者理解为存储相同消息类型的一个或多个队列</p>
+</li>
+<li><p>Consumer Group</p>
+<p> 一个 topic 可以有多个 group, 每个 group 可以有一到多个 consumer. topic 的消息在逻辑上会复制到多个 consumer group 上。如果一个 group 有多个 consumer. 每条消息只会被其中一个 consumer 消费。如果一个 topic 有多个 group, 每个 group 都会得到相同的消息。</p>
+</li>
+<li><p>Broker 一台 kafka 服务器。</p>
+</li>
+<li><p>Partition</p>
+<p> 为了实现扩展性，一个非常大的topic可以分布到多个broker上，一个topic可以分为多个partition，每个partition是一个有序的队列。kafka只保证一个partition中的消息顺序发给consumer，不保证多个partition消息有序。</p>
+</li>
+</ol>
+<h2 id="consumer-partition-topic-的关系"><a href="#consumer-partition-topic-的关系" class="headerlink" title="consumer / partition / topic 的关系"></a>consumer / partition / topic 的关系</h2><ol>
+<li>每个group中可以有多个consumer, 每个consumer属于一个consumer group</li>
+<li>每个 topic 中的一条消息只会被 consumer group 中的一个消费者消费。</li>
+<li>一个 topic 可以有多个 partition . 实际消费时是一个 partition 对应一个 consumer. </li>
+<li>一个 partition 对应一个 consumer . 但是一个 consumer 可以消费一个 topic 的多个 partition.</li>
+<li>同一个group中不能有多于partitions个数的consumer同时消费，否则某些consumer将无法得到消息.</li>
+</ol>
+<h1 id="安装与使用"><a href="#安装与使用" class="headerlink" title="安装与使用"></a>安装与使用</h1><ol>
+<li><p>解压，配置环境变量</p>
+</li>
+<li><p>修改配置文件</p>
+<pre><code># 这个在集群中的每个节点都不能重复。
+broker.id=0
+
+# zookeeper 的地址也要修改
+zookeeper.connect=192.168.192.132:2181</code></pre></li>
+<li><p>启动 zookeeper </p>
+<pre><code># 可以启动自己配置的 zookeeper 也可以使用如下命令启动 kafka 自带的 zookeeper
+bin/zookeeper-server-start.sh config/zookeeper.properties</code></pre></li>
+<li><p>启动 kafka </p>
+<pre><code># 在每台机器上执行
+bin/kafka-server-start.sh [-daemon] config/server.properties</code></pre></li>
+</ol>
+<h2 id="命令行使用-kafka"><a href="#命令行使用-kafka" class="headerlink" title="命令行使用 kafka"></a>命令行使用 kafka</h2><ol>
+<li><p>创建 topic </p>
+<pre><code>bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test</code></pre></li>
+<li><p>列出 topic </p>
+<pre><code>bin/kafka-topics.sh --list --zookeeper localhost:2181</code></pre></li>
+<li><p>查看 topic 详细信息</p>
+<pre><code>bin/kafka-topics.sh --describe --zookeeper localhost:2181 --topic test</code></pre></li>
+<li><p>通过命令行生产消息    </p>
+<pre><code>bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test</code></pre></li>
+<li><p>消费消息</p>
+<pre><code>bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning</code></pre></li>
+<li><p>删除 topic </p>
+<pre><code>bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic test</code></pre></li>
+</ol>
+<h1 id="Paritition机制"><a href="#Paritition机制" class="headerlink" title="Paritition机制"></a>Paritition机制</h1><p>Producer发送消息到broker时，会根据Paritition机制选择将其存储到哪一个Partition。如果Partition机制设置合理，所有消息可以均匀分布到不同的Partition里，这样就实现了负载均衡</p>
+<p>Paritition机制可以通过指定Producer的paritition. class这一参数来指定，该class必须实现kafka.producer.Partitioner接口</p>
+<p>默认算法是 hashcode % partitions，也可以自己实现。</p>
+<h1 id="消息应答机制"><a href="#消息应答机制" class="headerlink" title="消息应答机制"></a>消息应答机制</h1><p>通过参数 request.required.acks 可以设置 producer 接收消息ack 的机制。默认为0.  </p>
+<pre><code># 0: producer不会等待broker发送ack  
+# 1: 当leader接收到消息之后发送ack  
+# 2: 当所有的follower都同步消息成功后发送ack.  
+acks=0 </code></pre><h1 id="Consumer的负载均衡"><a href="#Consumer的负载均衡" class="headerlink" title="Consumer的负载均衡"></a>Consumer的负载均衡</h1><p>当一个group中consumer加入或者离开时,会触发负载均衡。</p>
+<pre><code># 计算公式
+# 可能出现 consumer 空闲的情况
+每个 consumer 分得的 partition = ceil(partitions.len/consumers.len)</code></pre><h1 id="文件存储"><a href="#文件存储" class="headerlink" title="文件存储"></a>文件存储</h1><p>在 kafka 数据存储目录下的 partition 以 topic + partition_id 命名。在 partition 文件夹下有一个 xxxx.index 和 xxxx.log 两种类型的文件。这些文件就是 Segment file</p>
+<p>每个 partition 会被分成多个 Segment，默认会保留7天的 segment.</p>
+<p>segment文件名为上一个segment文件最后一条消息的offset值. 索引文件存储元数据，索引文件中元数据指向对应数据文件中message的物理偏移地址. </p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><h2 id="Boker-配置参数"><a href="#Boker-配置参数" class="headerlink" title="Boker 配置参数"></a>Boker 配置参数</h2><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>broker.id</td>
+<td>每个 broker 唯一的整数ID</td>
+</tr>
+<tr>
+<td>zookeeper.connect</td>
+<td>ip:port</td>
+</tr>
+<tr>
+<td>listeners=PLAINTEXT://host:9092</td>
+<td>监听地址</td>
+</tr>
+<tr>
+<td>advertised.listeners</td>
+<td></td>
+</tr>
+<tr>
+<td>advertised.port</td>
+<td></td>
+</tr>
+<tr>
+<td>num.partitions</td>
+<td>topic的默认partitions数目</td>
+</tr>
+<tr>
+<td>auto.create.topics.enable = true</td>
+<td></td>
+</tr>
+<tr>
+<td>delete.topic.enable = false</td>
+<td></td>
+</tr>
+<tr>
+<td>log.dirs</td>
+<td>数据存放目录</td>
+</tr>
+<tr>
+<td>log.flush.interval.messages</td>
+<td></td>
+</tr>
+<tr>
+<td>log.flush.interval.ms</td>
+<td></td>
+</tr>
+<tr>
+<td>log.retention.bytes</td>
+<td>保留的日志大小</td>
+</tr>
+<tr>
+<td>log.retention.hours</td>
+<td>保留的日志时间</td>
+</tr>
+<tr>
+<td>log.roll.hours</td>
+<td>(默认 7 * 24 ) 强制Kafka在达到该时间后生成一个新的log文件，而不管log.segment.bytes是否达到指定的大小</td>
+</tr>
+<tr>
+<td>log.segment.bytes</td>
+<td>topic的partition存储是以目录中的segment files存在的，该值控制segment file的最大大小，如果文件达到该值后，会重新生成一个新的日志文件</td>
+</tr>
+<tr>
+<td>log.cleanup.policy</td>
+<td>delete/compact</td>
+</tr>
+<tr>
+<td>log.retention.check.interval.ms=60000</td>
+<td>日志片段文件的检查周期，查看它们是否达到了删除策略的设置（log.retention.hours或log.retention.bytes）</td>
+</tr>
+<tr>
+<td>log.cleaner.enable=false</td>
+<td>是否开启压缩</td>
+</tr>
+<tr>
+<td>log.cleaner.delete.retention.ms = 1 day</td>
+<td>对于压缩的日志保留的最长时间</td>
+</tr>
+<tr>
+<td>message.max.bytes</td>
+<td>消息体最大值</td>
+</tr>
+<tr>
+<td>num.io.threads</td>
+<td>用来执行 io 请求的线程数，应等于磁盘数</td>
+</tr>
+<tr>
+<td>queued.max.requests</td>
+<td>在I/O线程队列中的请求达到多少多少个之后，network线程停止接收新的请求</td>
+</tr>
+<tr>
+<td>socket.send.buffer.bytes</td>
+<td>发送缓冲</td>
+</tr>
+<tr>
+<td>socket.receive.buffer.bytes</td>
+<td>socket的接收缓冲区，SO_RCVBUFF</td>
+</tr>
+<tr>
+<td>replica.lag.max.messages = 4000</td>
+<td>如果relicas落后太多,将会认为此partition relicas已经失效。而一般情况下,因为网络延迟等原因,总会导致replicas中消息同步滞后。如果消息严重滞后,leader将认为此relicas网络延迟较大或者消息吞吐能力有限。在broker数量较少,或者网络不足的环境中,建议提高此值.</td>
+</tr>
+<tr>
+<td>replica.socket.timeout.ms= 30 * 1000</td>
+<td>leader与relicas的socket超时时间</td>
+</tr>
+<tr>
+<td>replica.socket.receive.buffer.bytes=64 * 1024</td>
+<td>leader复制的socket缓存大小</td>
+</tr>
+<tr>
+<td>replica.fetch.max.bytes = 1024 * 1024</td>
+<td>replicas每次获取数据的最大字节数</td>
+</tr>
+<tr>
+<td>replica.fetch.wait.max.ms = 500</td>
+<td>replicas同leader之间通信的最大等待时间，失败了会重试</td>
+</tr>
+<tr>
+<td>replica.fetch.min.bytes =1</td>
+<td>每一个fetch操作的最小数据尺寸,如果leader中尚未同步的数据不足此值,将会等待直到数据达到这个大小</td>
+</tr>
+<tr>
+<td>num.replica.fetchers = 1</td>
+<td>leader中进行复制的线程数，增大这个数值会增加relipca的IO</td>
+</tr>
+</tbody></table>
+<h2 id="Producer-配置参数"><a href="#Producer-配置参数" class="headerlink" title="Producer 配置参数"></a>Producer 配置参数</h2><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>acks = 0</td>
+<td>0,1,-1</td>
+</tr>
+<tr>
+<td>bootstrap.servers</td>
+<td>host:port,…</td>
+</tr>
+<tr>
+<td>key.serializer</td>
+<td>key的序列化方式，若是没有设置，同serializer.class</td>
+</tr>
+<tr>
+<td>value.serializer</td>
+<td></td>
+</tr>
+<tr>
+<td>buffer.memory</td>
+<td></td>
+</tr>
+<tr>
+<td>retries</td>
+<td>重试次数</td>
+</tr>
+<tr>
+<td>batch.size = 16384</td>
+<td>聚合多长请求到一定大小然后一起发送</td>
+</tr>
+<tr>
+<td>linger.ms</td>
+<td>batch 延迟的上限</td>
+</tr>
+<tr>
+<td>client.id</td>
+<td>string</td>
+</tr>
+<tr>
+<td>connections.max.idle.ms = 540000</td>
+<td>多长时间以后关闭空闲连接</td>
+</tr>
+<tr>
+<td>client.id=””</td>
+<td>用户随意指定，但是不能重复，主要用于跟踪记录消息</td>
+</tr>
+<tr>
+<td>partitioner.class=org.apache.kafka.clients.producer.internals.DefaultPartitioner</td>
+<td>分区的策略，默认是取模</td>
+</tr>
+<tr>
+<td>request.timeout.ms = 10000</td>
+<td>消息发送的最长等待时间</td>
+</tr>
+<tr>
+<td>send.buffer.bytes=100*1024</td>
+<td>socket的缓存大小</td>
+</tr>
+<tr>
+<td>retry.backoff.ms = 100</td>
+<td>每次失败后的间隔时间</td>
+</tr>
+<tr>
+<td>topic.metadata.refresh.interval.ms = 600 * 1000</td>
+<td>生产者定时更新topic元信息的时间间隔 ，若是设置为0，那么会在每个消息发送后都去更新数据</td>
+</tr>
+<tr>
+<td>queue.buffering.max.ms = 5000</td>
+<td>异步模式下缓冲数据的最大时间。例如设置为100则会集合100ms内的消息后发送，这样会提高吞吐量，但是会增加消息发送的延时</td>
+</tr>
+<tr>
+<td>queue.buffering.max.messages = 10000</td>
+<td>异步模式下缓冲的最大消息数，同上</td>
+</tr>
+<tr>
+<td>queue.enqueue.timeout.ms = -1</td>
+<td>异步模式下，消息进入队列的等待时间。若是设置为0，则消息不等待，如果进入不了队列，则直接被抛弃</td>
+</tr>
+<tr>
+<td>batch.num.messages=200</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="Consumer-配置参数"><a href="#Consumer-配置参数" class="headerlink" title="Consumer 配置参数"></a>Consumer 配置参数</h2><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>client.id</td>
+<td></td>
+</tr>
+<tr>
+<td>bootstrap.servers</td>
+<td>host:port,…</td>
+</tr>
+<tr>
+<td>key.serializer</td>
+<td>key 的序列化方式</td>
+</tr>
+<tr>
+<td>value.serializer</td>
+<td>value 的序列化方式</td>
+</tr>
+<tr>
+<td>group.id</td>
+<td>决定该Consumer归属的唯一组ID</td>
+</tr>
+<tr>
+<td>fetch.min.bytes = 1</td>
+<td>server发送到消费端的最小数据，若是不满足这个数值则会等待直到满足指定大小。默认为1表示立即接收。</td>
+</tr>
+<tr>
+<td>heartbeat.interval.ms</td>
+<td>用于确认 consumer 活着，在 consumer group 协调的时候会用到，值等于 session.timeout.ms 的三分之一</td>
+</tr>
+<tr>
+<td>session.timeout.ms = 10000</td>
+<td>用于检测 consumer 是否发生故障</td>
+</tr>
+<tr>
+<td>max.poll.interval.ms = 300000</td>
+<td>两次 poll 之间的最大间隔</td>
+</tr>
+<tr>
+<td>max.poll.records = 500</td>
+<td>一次获取的最大记录跳数</td>
+</tr>
+<tr>
+<td>request.timeout.ms = 305000</td>
+<td>等待超时时间</td>
+</tr>
+<tr>
+<td>retry.backoff.ms</td>
+<td></td>
+</tr>
+<tr>
+<td>reconnect.backoff.ms</td>
+<td></td>
+</tr>
+<tr>
+<td>auto.offset.reset</td>
+<td>earliest/latest/none(throw exception)</td>
+</tr>
+<tr>
+<td>enable.auto.commit = true</td>
+<td>自动提交</td>
+</tr>
+</tbody></table>
+<h1 id="kafka-java-api"><a href="#kafka-java-api" class="headerlink" title="kafka java api"></a>kafka java api</h1><p>注意如果 bootstrap.servers 写成 ip 形式，最好在 config/server.properties 中把 listeners=PLAINTEXT://192.168.192.132:9092 或者 advertised.listeners=PLAINTEXT://192.168.192.132:9092 改成 ip 物理网卡的 ip 地址，否则可能会发生连不上 Broker 的情况。</p>
+<h2 id="producer"><a href="#producer" class="headerlink" title="producer"></a>producer</h2><pre><code>public class MyProducer {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        Properties props = new Properties();
+        props.put(&quot;bootstrap.servers&quot;, &quot;192.168.192.132:9092&quot;);
+        props.put(&quot;key.serializer&quot;, &quot;org.apache.kafka.common.serialization.IntegerSerializer&quot;);
+        props.put(&quot;value.serializer&quot;, &quot;org.apache.kafka.common.serialization.StringSerializer&quot;);
+        KafkaProducer&lt;Integer, String&gt; producer = new KafkaProducer&lt;&gt;(props);
+        for (int i = 0; i &lt; 100; i++) {
+            producer.send(new ProducerRecord&lt;Integer, String&gt;(&quot;test&quot;,i,&quot;test_&quot;+i));
+        }
+        producer.close();
+    }
+}</code></pre><h2 id="consumer"><a href="#consumer" class="headerlink" title="consumer"></a>consumer</h2><p>参看 <a href="http://kafka.apache.org/0101/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html" target="_blank" rel="noopener">http://kafka.apache.org/0101/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html</a></p>
+<pre><code>public class MyConsumer {
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put(&quot;bootstrap.servers&quot;, &quot;192.168.192.132:9092&quot;);
+        props.put(&quot;group.id&quot;, &quot;test&quot;);
+        props.put(&quot;enable.auto.commit&quot;, &quot;true&quot;);
+        props.put(&quot;auto.commit.interval.ms&quot;, &quot;1000&quot;);
+        props.put(&quot;key.deserializer&quot;, &quot;org.apache.kafka.common.serialization.IntegerDeserializer&quot;);
+        props.put(&quot;value.deserializer&quot;, &quot;org.apache.kafka.common.serialization.StringDeserializer&quot;);
+        KafkaConsumer&lt;Integer, String&gt; consumer = new KafkaConsumer&lt;&gt;(props);
+        consumer.subscribe(Arrays.asList(&quot;test&quot;));
+        while (true) {
+            ConsumerRecords&lt;Integer, String&gt; records = consumer.poll(100);
+            for (ConsumerRecord&lt;Integer, String&gt; record : records)
+                System.out.printf(&quot;offset = %d, key = %s, value = %s%n&quot;, record.offset(), record.key(), record.value());
+        }
+    }
+}</code></pre><h2 id="stream"><a href="#stream" class="headerlink" title="stream"></a>stream</h2><p>有点类似 strom 的功能了，使 kafka 具有了流式处理的能力.</p>
+<p>参看 <a href="http://kafka.apache.org/0101/javadoc/index.html?org/apache/kafka/streams/KafkaStreams.html" target="_blank" rel="noopener">http://kafka.apache.org/0101/javadoc/index.html?org/apache/kafka/streams/KafkaStreams.html</a></p>
+<h1 id="HA"><a href="#HA" class="headerlink" title="HA"></a>HA</h1><p>参考：</p>
+<p><a href="http://www.jasongj.com/2015/04/24/KafkaColumn2/" target="_blank" rel="noopener">Kafka设计解析（二）- Kafka High Availability （上）</a></p>
+<p><a href="http://www.jasongj.com/2015/06/08/KafkaColumn3/" target="_blank" rel="noopener">Kafka设计解析（三）- Kafka High Availability （下）</a></p>
+<p><a href="http://zqhxuyuan.github.io/2016/02/23/2016-02-23-Kafka-Controller/" target="_blank" rel="noopener">Kafka源码分析 KafkaController</a></p>
+<h2 id="Leader-选举"><a href="#Leader-选举" class="headerlink" title="Leader 选举"></a>Leader 选举</h2><p>// 待补充</p>
+<h2 id="备份策略"><a href="#备份策略" class="headerlink" title="备份策略"></a>备份策略</h2><p>// 待补充</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/02/17/maven-encyclopedia/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Maven 配置使用以及常用插件总结</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/02/04/storm-start/">
+        <span class="next-text nav-default">storm 初步</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

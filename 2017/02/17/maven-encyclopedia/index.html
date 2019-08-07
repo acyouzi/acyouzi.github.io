@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Maven 配置使用以及常用插件总结">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/02/17/maven-encyclopedia/">
+
+
+<meta name="description" content="概述一直在用 maven 学的东西零零散散的，不成系统。正好抽空把 maven 我所了解的东西整理了一下，备忘，也方便以后查找。 简单配置 apache-maven-3.3.9/conf/settings.xml 修改本地仓库位置 &amp;lt;localRepository&amp;gt;E:/apache-maven-3.3.9/localRepository&amp;lt;/localRepository&amp;gt;">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Maven 配置使用以及常用插件总结">
+<meta property="og:url" content="http://acyouzi.com/2017/02/17/maven-encyclopedia/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="概述一直在用 maven 学的东西零零散散的，不成系统。正好抽空把 maven 我所了解的东西整理了一下，备忘，也方便以后查找。 简单配置 apache-maven-3.3.9/conf/settings.xml 修改本地仓库位置 &amp;lt;localRepository&amp;gt;E:/apache-maven-3.3.9/localRepository&amp;lt;/localRepository&amp;gt;">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:58:22.600Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Maven 配置使用以及常用插件总结">
+<meta name="twitter:description" content="概述一直在用 maven 学的东西零零散散的，不成系统。正好抽空把 maven 我所了解的东西整理了一下，备忘，也方便以后查找。 简单配置 apache-maven-3.3.9/conf/settings.xml 修改本地仓库位置 &amp;lt;localRepository&amp;gt;E:/apache-maven-3.3.9/localRepository&amp;lt;/localRepository&amp;gt;">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Maven 配置使用以及常用插件总结 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Maven 配置使用以及常用插件总结
+        
+      </h1>
+
+      <time class="post-time">
+          Feb 17 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>一直在用 maven 学的东西零零散散的，不成系统。正好抽空把 maven 我所了解的东西整理了一下，备忘，也方便以后查找。</p>
+<h2 id="简单配置"><a href="#简单配置" class="headerlink" title="简单配置"></a>简单配置</h2><ol>
+<li><p>apache-maven-3.3.9/conf/settings.xml 修改本地仓库位置</p>
+<pre><code>&lt;localRepository&gt;E:/apache-maven-3.3.9/localRepository&lt;/localRepository&gt;</code></pre></li>
+<li><p>新建 localRepository 目录，在目录内拷贝一份 conf/settings.xml. </p>
+</li>
+<li><p>中央仓库定义在 lib/maven-model-builder-3.3.9.jar/org/apache/maven/model/pom.xml </p>
+<pre><code>&lt;repositories&gt;
+    &lt;repository&gt;
+        &lt;id&gt;central&lt;/id&gt;
+        &lt;name&gt;Central Repository&lt;/name&gt;
+        &lt;url&gt;https://repo.maven.apache.org/maven2&lt;/url&gt;
+        &lt;layout&gt;default&lt;/layout&gt;
+        &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+        &lt;/snapshots&gt;
+    &lt;/repository&gt;
+&lt;/repositories&gt;
+
+&lt;pluginRepositories&gt;
+    &lt;pluginRepository&gt;
+        &lt;id&gt;central&lt;/id&gt;
+        &lt;name&gt;Central Repository&lt;/name&gt;
+        &lt;url&gt;https://repo.maven.apache.org/maven2&lt;/url&gt;
+        &lt;layout&gt;default&lt;/layout&gt;
+        &lt;snapshots&gt;
+        &lt;enabled&gt;false&lt;/enabled&gt;
+        &lt;/snapshots&gt;
+        &lt;releases&gt;
+            &lt;updatePolicy&gt;never&lt;/updatePolicy&gt;
+        &lt;/releases&gt;
+    &lt;/pluginRepository&gt;
+&lt;/pluginRepositories&gt;</code></pre></li>
+<li><p>配置 idea</p>
+<pre><code>file -&gt; other settings -&gt; default settings -&gt; 
+Build,Execution,Deployment -&gt; build tools -&gt; maven
+
+修改 maven 指向我们自己的 maven 程序，不要使用默认的。
+修改 user settings file 指向 第三步拷贝的 localRepository/settings.xml </code></pre></li>
+</ol>
+<h2 id="设置使用的仓库"><a href="#设置使用的仓库" class="headerlink" title="设置使用的仓库"></a>设置使用的仓库</h2><p>在 apache-maven-3.3.9/localRepository/settings.xml 中设置，profile 配置工厂，activeProfiles 激活配置。 这里使用 aliyun 的工厂。当 localRepository 不存在会去 Aliyun Repository 找，如果 Aliyun Repository 挂掉了，会去默认的 Central 工厂找。</p>
+<pre><code>&lt;profiles&gt;
+    &lt;profile&gt;
+      &lt;id&gt;AliyunRepository&lt;/id&gt;
+
+      &lt;repositories&gt;
+        &lt;repository&gt;
+            &lt;id&gt;aliyun&lt;/id&gt;
+            &lt;name&gt;Aliyun Repository&lt;/name&gt;
+            &lt;url&gt;http://maven.aliyun.com/nexus/content/repositories/central&lt;/url&gt;
+            &lt;layout&gt;default&lt;/layout&gt;
+            &lt;releases&gt;
+                &lt;enabled&gt;true&lt;/enabled&gt;
+                &lt;updatePolicy&gt;never&lt;/updatePolicy&gt;
+            &lt;/releases&gt;
+            &lt;snapshots&gt;
+                &lt;enabled&gt;false&lt;/enabled&gt;
+            &lt;/snapshots&gt;
+        &lt;/repository&gt;
+      &lt;/repositories&gt;
+
+      &lt;pluginRepositories&gt;
+        &lt;pluginRepository&gt;
+          &lt;id&gt;aliyun&lt;/id&gt;
+          &lt;name&gt;Aliyun Repository&lt;/name&gt;
+          &lt;url&gt;http://maven.aliyun.com/nexus/content/repositories/central&lt;/url&gt;
+          &lt;layout&gt;default&lt;/layout&gt;
+          &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+          &lt;/snapshots&gt;
+          &lt;releases&gt;
+            &lt;updatePolicy&gt;never&lt;/updatePolicy&gt;
+          &lt;/releases&gt;
+        &lt;/pluginRepository&gt;
+      &lt;/pluginRepositories&gt;
+    &lt;/profile&gt;
+&lt;/profiles&gt;
+&lt;activeProfiles&gt;
+    &lt;!--  激活 prifile --&gt;
+    &lt;activeProfile&gt;AliyunRepository&lt;/activeProfile&gt;
+&lt;/activeProfiles&gt;</code></pre><p>或者可以配置 mirrors .这里我们使用的 central 或者其他配置的工厂都会映射到我们配置的 url. 如果这个 url 挂掉了，那就是真的找不到了。</p>
+<pre><code>&lt;mirrors&gt;
+    &lt;mirror&gt;
+        &lt;id&gt;testMirror&lt;/id&gt;
+        &lt;!--repositoryId--&gt;
+        &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;
+        &lt;name&gt;All of the repository&lt;/name&gt;
+        &lt;url&gt;http://maven.aliyun.com/nexus/content/repositories/central&lt;/url&gt;
+    &lt;/mirror&gt;
+&lt;/mirrors&gt;</code></pre><h2 id="deply-jar-到-nexus-的配置"><a href="#deply-jar-到-nexus-的配置" class="headerlink" title="deply jar 到 nexus 的配置"></a>deply jar 到 nexus 的配置</h2><p>首先需要配置仓库, pom.xml 中</p>
+<pre><code>&lt;distributionManagement&gt;
+    &lt;repository&gt;
+        &lt;id&gt;Releases&lt;/id&gt;
+        &lt;url&gt;xxxx&lt;/url&gt;
+    &lt;/repository&gt;
+    &lt;repository&gt;
+        &lt;id&gt;Snapshots&lt;/id&gt;
+        &lt;url&gt;xxxx&lt;/url&gt;
+    &lt;/repository&gt;
+&lt;/distributionManagement&gt;</code></pre><p>然后需要设置 server 的用户名密码，settings.xml</p>
+<pre><code>&lt;servers&gt;
+    &lt;server&gt;
+      &lt;!--id 要跟上面 repository 的相同--&gt;
+      &lt;id&gt;Releases&lt;/id&gt;
+      &lt;username&gt;repouser&lt;/username&gt;
+      &lt;password&gt;repopwd&lt;/password&gt;
+    &lt;/server&gt;
+&lt;/servers&gt;</code></pre><h2 id="依赖范围"><a href="#依赖范围" class="headerlink" title="依赖范围"></a>依赖范围</h2><pre><code>&lt;scope&gt;test&lt;/scope&gt;
+
+compile
+
+    编译范围有效，编译和打包时会把依赖存储进去
+
+provided
+
+    在编译和测试阶段有效，打包不会依赖，比如 servlet-api , 在 web 服务器上 servlet-api 已经存在了，如果再打包会引起冲突。
+
+runtime
+
+    在运行时依赖，在编译的时候不依赖，比如 mysql 的驱动包，在整个项目代码中没有直接使用，但是在运行时会加载这个类。
+
+test
+
+    测试范围有效，编译/打包时不会使用这个依赖
+
+system
+
+    忘记了，没用到过</code></pre><h2 id="依赖冲突"><a href="#依赖冲突" class="headerlink" title="依赖冲突"></a>依赖冲突</h2><pre><code>a -&gt; xx.1
+b -&gt; xx.2
+
+c -&gt; a,b  
+c 依赖 xx.1 还是 xx.2 呢？
+
+a,b 和 xx 的依赖是直接依赖
+c 和 xx 的依赖是间接依赖
+
+在 c 中如果先声明的依赖是 a 则, 依赖 xx.1，也就是间接依赖级别相同，依赖先声明的那个。
+
+当依赖级别不相同时，选择依赖层次最短的那一个。</code></pre><h2 id="排除依赖"><a href="#排除依赖" class="headerlink" title="排除依赖"></a>排除依赖</h2><p>如果 xxxx 依赖一个 junit 3.xx 但是我希望他不要使用他自己的 junit 依赖，可以使用 exclusions 排除依赖</p>
+<pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;xxxx&lt;/groupId&gt;
+    &lt;artifactId&gt;xxxx&lt;/artifactId&gt;
+    &lt;version&gt;4.12&lt;/version&gt;
+    &lt;exclusions&gt;
+        &lt;exclusion&gt;
+            &lt;groupId&gt;junit&lt;/groupId&gt;
+            &lt;artifactId&gt;junit&lt;/artifactId&gt;
+        &lt;/exclusion&gt;
+    &lt;/exclusions&gt;
+&lt;/dependency&gt;</code></pre><h2 id="maven-隐式变量"><a href="#maven-隐式变量" class="headerlink" title="maven 隐式变量"></a>maven 隐式变量</h2><pre><code>${basedir} 项目根目录
+${project.build.directory} 构建目录，缺省为target
+${project.build.outputDirectory} 构建过程输出目录，缺省为target/classes
+${project.build.finalName} 产出物名称，缺省为${project.artifactId}-${project.version}
+${project.packaging} 打包类型，缺省为jar
+${project.xxx} 当前pom文件的任意节点的内容</code></pre><h2 id="maven-本地编写的模块被其他模块引用"><a href="#maven-本地编写的模块被其他模块引用" class="headerlink" title="maven 本地编写的模块被其他模块引用"></a>maven 本地编写的模块被其他模块引用</h2><pre><code>执行 mvn install 安装到本地仓库</code></pre><h2 id="maven-聚合，一次管理多个模块t"><a href="#maven-聚合，一次管理多个模块t" class="headerlink" title="maven 聚合，一次管理多个模块t"></a>maven 聚合，一次管理多个模块t</h2><p>在 idea 中新建一个 maven 作为父项目，然后可以按照下面的方法建立和管理子项目。</p>
+<pre><code>file -&gt; new -&gt; Model... 
+在一个项目里面建立多个 model ，每个 model 都是一个子 maven 项目</code></pre><p>添加 model 后项目根目录的 pom.xml 中发现多了下面几行</p>
+<pre><code>&lt;modules&gt;
+    &lt;module&gt;xxx&lt;/module&gt;
+&lt;/modules&gt;</code></pre><p>而且我们新建 model 中也有一个 pom.xml 里面有如下内容</p>
+<pre><code>&lt;parent&gt;
+    &lt;artifactId&gt;xxxx&lt;/artifactId&gt;
+    &lt;groupId&gt;xxxx&lt;/groupId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;</code></pre><p>这时，可以把一些各个 model 公共的部分移动到父目 pom.xml</p>
+<h2 id="父-pom-xml-中依赖相关注意"><a href="#父-pom-xml-中依赖相关注意" class="headerlink" title="父 pom.xml 中依赖相关注意"></a>父 pom.xml 中依赖相关注意</h2><ol>
+<li><p>父 pom.xml 中应写入所有 model 的全部依赖.</p>
+</li>
+<li><p>父 pom.xml 中的依赖应该写入 dependencyManagement 中,如果直接写入 dependencies 中则整个项目的所有 model 都将继承这些依赖，这显然是不恰当的。</p>
+<pre><code>&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        // 项目的所有依赖，携带版本信息
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;</code></pre></li>
+<li><p>子 pom.xml 中依赖那些包还是需要些清楚，但是不要再写 version,scope,exclusions 信息了，version,scope,exclusions 交个全局的父 pom.xml 统一管理,这样就不会出现版本冲突的问题了.</p>
+</li>
+</ol>
+<h2 id="版本管理"><a href="#版本管理" class="headerlink" title="版本管理"></a>版本管理</h2><p>项目的版本命名为 : x.y.z-里程碑</p>
+<pre><code>x 是架构上的变化，大变化
+y 分支，在大版本上的分支
+z 在这个分支的代码修改，更新</code></pre><p>里程碑分为</p>
+<pre><code>SNAPSHOT
+ALPHA
+BETA
+Release(RC) 发行版本
+GA 可靠版本</code></pre><h2 id="maven-生命周期"><a href="#maven-生命周期" class="headerlink" title="maven 生命周期"></a>maven 生命周期</h2><p>clean</p>
+<pre><code>pre-clean
+clean
+post-clean</code></pre><p>compile 实际上可以分为下面四个大步骤(网上粘的)</p>
+<pre><code>prepare-resources 资源拷贝,本阶段可以自定义需要拷贝的资源
+compile    编译,本阶段完成源代码编译 
+package    打包,本阶段根据 pom.xml 中描述的打包配置创建 JAR / WAR 包
+install    安装,本阶段在本地 / 远程仓库中安装工程包</code></pre><p>更具体的可以分为下面这些步骤, 记住几个关键步骤的顺序就好了。</p>
+<pre><code>validate    检查工程配置是否正确，完成构建过程的所有必要信息是否能够获取到。
+initialize    初始化构建状态，例如设置属性。
+generate-sources    生成编译阶段需要包含的任何源码文件。
+process-sources    处理源代码，例如，过滤任何值（filter any value）。
+generate-resources    生成工程包中需要包含的资源文件。
+process-resources    拷贝和处理资源文件到目的目录中，为打包阶段做准备。
+compile    编译工程源码。
+process-classes    处理编译生成的文件，例如 Java Class 字节码的加强和优化。
+generate-test-sources    生成编译阶段需要包含的任何测试源代码。
+process-test-sources    处理测试源代码，例如，过滤任何值（filter any values)。
+test-compile    编译测试源代码到测试目的目录。
+process-test-classes    处理测试代码文件编译后生成的文件。
+test    使用适当的单元测试框架（例如JUnit）运行测试。
+prepare-package    在真正打包之前，为准备打包执行任何必要的操作。
+package    获取编译后的代码，并按照可发布的格式进行打包，例如 JAR、WAR 或者 EAR 文件。
+pre-integration-test    在集成测试执行之前，执行所需的操作。例如，设置所需的环境变量。
+integration-test    处理和部署必须的工程包到集成测试能够运行的环境中。
+post-integration-test    在集成测试被执行后执行必要的操作。例如，清理环境。
+verify    运行检查操作来验证工程包是有效的，并满足质量要求。
+install    安装工程包到本地仓库中，该仓库可以作为本地其他工程的依赖。
+deploy    拷贝最终的工程包到远程仓库中，以共享给其他开发人员和工程。</code></pre><ol>
+<li>mvn compile 相当于执行到 complie 的 compile 这一步</li>
+<li>mvn test 相当于执行到 complie 的 test 这一步</li>
+<li>mvn package 相当于执行到 complie 的 package 这一步</li>
+<li>mvn install 相当于执行到 complie 的 install 这一步</li>
+<li>mvn deploy 相当于执行到 complie 的 deploy 这一步</li>
+</ol>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>maven 所有的测试都放在 src/test/java 中</p>
+<p>默认执行一下三种结构的类的测试</p>
+<pre><code>Test**
+**Test
+**TestCase</code></pre><p>测试相关配置，一般不需要修改</p>
+<p>参考：<a href="http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html</a></p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.19.1&lt;/version&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.maven.surefire&lt;/groupId&gt;
+            &lt;artifactId&gt;surefire-junit47&lt;/artifactId&gt;
+            &lt;version&gt;2.19.1&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+    &lt;configuration&gt;
+      &lt;excludes&gt;
+        &lt;exclude&gt;**/TestXXX.java&lt;/exclude&gt;
+        &lt;exclude&gt;**/TestYYY.java&lt;/exclude&gt;
+      &lt;/excludes&gt;
+      &lt;includes&gt;
+        &lt;include&gt;**/**HAHA.java&lt;/include&gt;
+      &lt;/includes&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre><h2 id="插件使用"><a href="#插件使用" class="headerlink" title="插件使用"></a>插件使用</h2><p>参考: <a href="http://maven.apache.org/plugins/" target="_blank" rel="noopener">http://maven.apache.org/plugins/</a></p>
+<p>在父 pom.xml 内部，build 节点写配置 pluginManagement 作用和 dependencyManagement 一样，管理插件的具体配置，configuration 节点的一些参数可以在插件网站上查到，execution 绑定插件在生命周期的哪个阶段执行，以及执行那条命令。</p>
+<pre><code>&lt;build&gt;
+    &lt;pluginManagement&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-source-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.0.1&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;!--http://maven.apache.org/plugins/maven-source-plugin/jar-mojo.html--&gt;
+                &lt;/configuration&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;!--Binds by default to the lifecycle phase: package.--&gt;
+                        &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;jar&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.6.1&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;source&gt;1.8&lt;/source&gt;
+                    &lt;target&gt;1.8&lt;/target&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/pluginManagement&gt;
+&lt;/build&gt;</code></pre><p>子 pom.xml 只需要声明 groupId artifactId 就可以使用插件</p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</code></pre><h2 id="常用插件"><a href="#常用插件" class="headerlink" title="常用插件"></a>常用插件</h2><ol>
+<li><p>resources</p>
+<p> 参考: <a href="http://www.cnblogs.com/pixy/p/4798089.html" target="_blank" rel="noopener">http://www.cnblogs.com/pixy/p/4798089.html</a></p>
+<p> 构建Maven项目的时候，如果没有进行特殊的配置，Maven会按照标准的目录结构查找和处理各种类型文件。</p>
+<pre><code>src/main/java和src/test/java 
+这两个目录中的所有*.java文件会分别在comile和test-comiple阶段被编译，编译结果分别放到了target/classes和targe/test-classes目录中，但是这两个目录中的其他文件都会被忽略掉。
+
+src/main/resouces和src/test/resources
+这两个目录中的文件也会分别被复制到target/classes和target/test-classes目录中。
+
+target/classes
+打包插件默认会把这个目录中的所有内容打入到jar包或者war包中。</code></pre><p> 但是有时候我们会把有些配置文件常与.java文件一起放在src/main/java目录，这个时候就需要进行一些特殊的配置了，这里就需要用到 resources 插件</p>
+<p> 配置如下</p>
+<pre><code>&lt;build&gt;
+    ...
+    &lt;resources&gt;
+      &lt;resource&gt;
+        &lt;directory&gt;src/my-resources&lt;/directory&gt;
+        &lt;includes&gt;
+          &lt;include&gt;**/*.txt&lt;/include&gt;
+          &lt;include&gt;**/*.rtf&lt;/include&gt;
+        &lt;/includes&gt;
+      &lt;/resource&gt;
+      ...
+    &lt;/resources&gt;
+    ...
+&lt;/build&gt;</code></pre><p> 或者</p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.0.2&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;encoding&gt;UTF-8&lt;/encoding&gt;
+        &lt;outputDirectory&gt;${basedir}/target/classes&lt;/outputDirectory&gt;
+        &lt;resources&gt;
+            &lt;resource&gt;
+                &lt;directory&gt;${basedir}/src/main/java&lt;/directory&gt;
+                &lt;includes&gt;
+                    &lt;include&gt;**/*.xml&lt;/include&gt;
+                &lt;/includes&gt;
+            &lt;/resource&gt;
+        &lt;/resources&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;process-resources&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;resources&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre></li>
+<li><p>compiler</p>
+<p> 参考: <a href="http://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html</a></p>
+<p> 可以设置项目使用的 jdk版本，compilerArgs 等信息</p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.6.1&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;source&gt;1.8&lt;/source&gt;
+        &lt;target&gt;1.8&lt;/target&gt;
+        &lt;compilerArgs&gt;
+            &lt;arg&gt;-verbose&lt;/arg&gt;
+            &lt;arg&gt;-Xlint:all,-options,-path&lt;/arg&gt;
+        &lt;/compilerArgs&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre></li>
+<li><p>surefire 测试插件</p>
+<p> 上面有介绍，参考: <a href="http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html</a></p>
+</li>
+<li><p>jar</p>
+<p> 可以指定打包时排除哪些文件，指定 manifest 文件的内容，或者可以使用</p>
+<pre><code>&lt;manifestFile&gt;${project.build.outputDirectory}/META-INF/MANIFEST.MF&lt;/manifestFile&gt;</code></pre><p> 直接指定我们编写好的 manifest 文件</p>
+<p> archive 配置参看: <a href="http://maven.apache.org/shared/maven-archiver/index.html" target="_blank" rel="noopener">http://maven.apache.org/shared/maven-archiver/index.html</a></p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.0.2&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;excludes&gt;
+　　　　    &lt;exclude&gt;**.properties&lt;/exclude&gt;
+　　　　&lt;/excludes&gt;
+        &lt;archive&gt;
+            &lt;manifest&gt;
+                &lt;addClasspath&gt;true&lt;/addClasspath&gt;
+                &lt;classpathPrefix&gt;lib/&lt;/classpathPrefix&gt;
+                &lt;mainClass&gt;com.demo.HelloWorld&lt;/mainClass&gt;
+            &lt;/manifest&gt;
+        &lt;/archive&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre></li>
+<li><p>dependency 配合 jar 一起使用，拷贝依赖到指定的 lib 目录.</p>
+<p> 参看: <a href="http://maven.apache.org/plugins/maven-dependency-plugin/copy-dependencies-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/plugins/maven-dependency-plugin/copy-dependencies-mojo.html</a></p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-dependency-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.0.0&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;outputDirectory&gt;${project.build.directory}/lib&lt;/outputDirectory&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;package&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;copy-dependencies&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre></li>
+<li><p>assembly<br> 这篇文章介绍的不错: <a href="http://ee-dreamer.com/?p=1129" target="_blank" rel="noopener">http://ee-dreamer.com/?p=1129</a></p>
+<p> 参考: <a href="http://maven.apache.org/plugins/maven-assembly-plugin/descriptor-refs.html" target="_blank" rel="noopener">http://maven.apache.org/plugins/maven-assembly-plugin/descriptor-refs.html</a></p>
+<p> 具体配置</p>
+<pre><code>&lt;plugin&gt;
+    &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+    &lt;!--&lt;version&gt;3.0.0&lt;/version&gt;--&gt;
+    &lt;configuration&gt;
+        &lt;descriptors&gt;
+            &lt;!--assembly 文件说明大什么类型的包，怎么打包--&gt;
+            &lt;descriptor&gt;src/main/resources/assembly.xml&lt;/descriptor&gt;
+        &lt;/descriptors&gt;
+        &lt;archive&gt;
+            &lt;!--应该除了打 jar 包，不会使用吧--&gt;
+            &lt;manifest&gt;
+                &lt;addClasspath&gt;true&lt;/addClasspath&gt;
+                &lt;mainClass&gt;com.acyouzi.test.Test&lt;/mainClass&gt;
+                &lt;classpathPrefix&gt;/&lt;/classpathPrefix&gt;
+            &lt;/manifest&gt;
+        &lt;/archive&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;package&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;!-- single 相关配置 http://maven.apache.org/plugins/maven-assembly-plugin/single-mojo.html--&gt;
+                &lt;goal&gt;single&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre><p> assembly 文件在 src/main/resources/assembly.xml</p>
+<p> 相关参数: <a href="http://maven.apache.org/plugins/maven-assembly-plugin/assembly.html" target="_blank" rel="noopener"> http://maven.apache.org/plugins/maven-assembly-plugin/assembly.html</a></p>
+<pre><code>&lt;assembly xmlns=&quot;http://maven.apache.org/ASSEMBLY/2.0.0&quot;
+      xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+      xsi:schemaLocation=&quot;http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd&quot;&gt;
+    &lt;formats&gt;
+        &lt;!--压缩成什么格式的--&gt;
+        &lt;format&gt;tar.gz&lt;/format&gt;
+    &lt;/formats&gt;
+    &lt;!--是否在包外面包装一个文件夹--&gt;
+    &lt;includeBaseDirectory&gt;true&lt;/includeBaseDirectory&gt;
+    &lt;fileSets&gt;
+        &lt;fileSet&gt;
+            &lt;!--把某个目录下的文件拷贝到包下面的某个目录--&gt;
+            &lt;directory&gt;${project.build.outputDirectory}&lt;/directory&gt;
+            &lt;outputDirectory&gt;/lib&lt;/outputDirectory&gt;
+            &lt;!--过滤掉一些不需要拷贝的文件--&gt;
+            &lt;excludes&gt;
+                &lt;exclude&gt;*.sh&lt;/exclude&gt;
+            &lt;/excludes&gt;
+        &lt;/fileSet&gt;
+    &lt;/fileSets&gt;
+    &lt;dependencySets&gt;
+        &lt;dependencySet&gt;
+            &lt;!--把依赖包一块复制到包下的某个文件夹--&gt;
+            &lt;outputDirectory&gt;/lib&lt;/outputDirectory&gt;
+            &lt;!--false不解压，是以jar包的形式出现，如果为 true 包会被解压成 class 文件--&gt;
+            &lt;unpack&gt;false&lt;/unpack&gt;
+            &lt;!--哪些依赖内容范围的打包，runtime 一般来讲 com.mysql.4j 这类包 scope 是 runtime 如果使用 complie 作用域，这种包就不会复制过去导致错误的发生--&gt;
+            &lt;scope&gt;runtime&lt;/scope&gt;
+            &lt;!--排除的依赖--&gt;
+            &lt;excludes&gt;
+                &lt;exclude&gt;org.apache.ant:*:jar&lt;/exclude&gt;
+            &lt;/excludes&gt;
+        &lt;/dependencySet&gt;
+    &lt;/dependencySets&gt;
+&lt;/assembly&gt;</code></pre></li>
+<li><p>source 用于生成源码包</p>
+<p> 参考: <a href="http://maven.apache.org/plugins/maven-source-plugin/jar-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/plugins/maven-source-plugin/jar-mojo.html</a></p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-source-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.0.1&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;outputDirectory&gt;${project.build.directory}&lt;/outputDirectory&gt;
+        &lt;attach&gt;false&lt;/attach&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;package&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;jar-no-fork&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre></li>
+<li><p>javadoc</p>
+<p> 参考: <a href="http://maven.apache.org/plugins/maven-javadoc-plugin/aggregate-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/plugins/maven-javadoc-plugin/aggregate-mojo.html</a></p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-javadoc-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.9.1&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;!--在一个项目有多个 model 的时候使用--&gt;
+        &lt;aggregate&gt;true&lt;/aggregate&gt;
+        &lt;reportOutputDirectory&gt;${project.build.directory}&lt;/reportOutputDirectory&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;package&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;aggregate&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt; </code></pre></li>
+<li><p>Checkstyle</p>
+<p> 参考: <a href="http://maven.apache.org/plugins/maven-checkstyle-plugin/checkstyle-aggregate-mojo.html" target="_blank" rel="noopener">http://maven.apache.org/plugins/maven-checkstyle-plugin/checkstyle-aggregate-mojo.html</a></p>
+<p> 可以使用 google java style <a href="http://google.github.io/styleguide/javaguide.html" target="_blank" rel="noopener"> http://google.github.io/styleguide/javaguide.html</a> 做检查</p>
+<p> xxxchecks.xml 最好是根据 checkstyle 依赖的版本下载相应的 jar 包，然后从 jar 包中提取 xxxchecks.xml 再根据需要做一定修改 , 因为不同版本的关键字相差很多,版本不匹配容易发生令人头疼的问题。</p>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-checkstyle-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.17&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;includeTestResources&gt;false&lt;/includeTestResources&gt;
+        &lt;!--&lt;includes&gt;**/*.java&lt;/includes&gt;--&gt;
+        &lt;resourceIncludes&gt;**/*.properties&lt;/resourceIncludes&gt;
+        &lt;configLocation&gt;src/main/resources/google_checks.xml&lt;/configLocation&gt;
+        &lt;outputFile&gt;${project.build.directory}/checkstyle-result.plain&lt;/outputFile&gt;
+        &lt;!--&quot;plain&quot; and &quot;xml&quot;--&gt;
+        &lt;outputFileFormat&gt;plain&lt;/outputFileFormat&gt;
+        &lt;consoleOutput&gt;false&lt;/consoleOutput&gt;
+    &lt;/configuration&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.puppycrawl.tools&lt;/groupId&gt;
+            &lt;artifactId&gt;checkstyle&lt;/artifactId&gt;
+            &lt;version&gt;7.1.2&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;phase&gt;validate&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;checkstyle&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre></li>
+<li><p>cobertura 是一款统计测试覆盖率的工具 官网地址是 <a href="http://www.mojohaus.org/cobertura-maven-plugin/" target="_blank" rel="noopener">http://www.mojohaus.org/cobertura-maven-plugin/</a></p>
+</li>
+</ol>
+<h2 id="nexus-相关"><a href="#nexus-相关" class="headerlink" title="nexus 相关"></a>nexus 相关</h2><p>mvn:deploy 提交命令，提交都是给 nexus hosted 类型的工厂</p>
+<p>hosted 类型的工厂有三个，hosted 工厂都是对内服务的，不会面向公网</p>
+<pre><code>3rd party nexus 库中没有，从官网下载的 jar ,提交到这个库来管理
+Releases 我们提交的  release 版本的 jar
+Snapshots 我们提交的  snapshots 版本的 jar</code></pre><p>proxy 类型的工厂，比如：</p>
+<pre><code>Central 工厂，从中央工厂下载下来的数据。</code></pre><p>group 类型工厂，会自动从 3rd party ，Releases，Snapshots，Central 这些工厂查找数据，一般我们使用这种类型的工厂地址作为仓库</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/02/17/scala-01/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">scala 学习 01 基本语法</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/02/06/kafka-learn/">
+        <span class="next-text nav-default">kafka 相关概念和使用</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="ReentrantLock 重入锁使用与实现">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/20/java-parallel-reentrantlock/">
+
+
+<meta name="description" content="ReentrantLock 重入锁 重入锁的名字是因为在同一个线程内他可以反复加锁，一个线程可以同时获得多把锁。因而可以写出如下代码: lock.lock(); lock.lock(); try {     // do something  }finally {     lock.unlock();     lock.unlock(); } 使用 lock.lockInterruptibly()">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ReentrantLock 重入锁使用与实现">
+<meta property="og:url" content="http://acyouzi.com/2016/11/20/java-parallel-reentrantlock/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="ReentrantLock 重入锁 重入锁的名字是因为在同一个线程内他可以反复加锁，一个线程可以同时获得多把锁。因而可以写出如下代码: lock.lock(); lock.lock(); try {     // do something  }finally {     lock.unlock();     lock.unlock(); } 使用 lock.lockInterruptibly()">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:00:25.080Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ReentrantLock 重入锁使用与实现">
+<meta name="twitter:description" content="ReentrantLock 重入锁 重入锁的名字是因为在同一个线程内他可以反复加锁，一个线程可以同时获得多把锁。因而可以写出如下代码: lock.lock(); lock.lock(); try {     // do something  }finally {     lock.unlock();     lock.unlock(); } 使用 lock.lockInterruptibly()">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> ReentrantLock 重入锁使用与实现 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          ReentrantLock 重入锁使用与实现
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 20 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="ReentrantLock-重入锁"><a href="#ReentrantLock-重入锁" class="headerlink" title="ReentrantLock 重入锁"></a>ReentrantLock 重入锁</h3><ol>
+<li><p>重入锁的名字是因为在同一个线程内他可以反复加锁，一个线程可以同时获得多把锁。因而可以写出如下代码:</p>
+<pre><code>lock.lock();
+lock.lock();
+try {
+    // do something 
+}finally {
+    lock.unlock();
+    lock.unlock();
+}</code></pre></li>
+<li><p>使用 lock.lockInterruptibly() 重入锁可以对在等待锁期间对中断做出相应，示例如下：</p>
+<pre><code>try {
+    lock.lockInterruptibly();
+    // do something
+} catch (InterruptedException e) {
+    e.printStackTrace();
+}finally {
+    if ( lock.isHeldByCurrentThread() ) {
+        lock.unlock();
+    }
+}</code></pre></li>
+<li><p>使用 tryLock() 可以进行有限时间的等待：</p>
+<pre><code>try {
+    if (lock.tryLock(1000, TimeUnit.MICROSECONDS)) {
+        // do something
+    }
+} catch (InterruptedException e) {
+    e.printStackTrace();
+}</code></pre><p> tryLock 第一个参数是时间，第二个参数是时间的单位。也可以不带参数，进行一次锁请求，失败立即返回。</p>
+</li>
+<li><p>公平锁与非公平锁：ReentrantLock 默认是非公平锁，也就是在唤醒时随便从等待队列中挑选一个线程唤醒，不能保证先来先得。可以通过使用构造函数 public ReentrantLock(boolean fair) 来创建公平锁。公平锁的性能相对要低一点。</p>
+</li>
+</ol>
+<h3 id="重入锁实现"><a href="#重入锁实现" class="headerlink" title="重入锁实现"></a>重入锁实现</h3><p>先来看几种状态</p>
+<ul>
+<li>SIGNAL -1 : 表示节点的后继节点已经阻塞或即将阻塞，需要信号唤醒</li>
+<li>CANCELLED 1 : 因为超时或中断取消等待 </li>
+<li>CONDITION -2 : 等待某个条件而被阻塞，在条件队列里面</li>
+<li>PROPAGATE -3 : 共享模式中使用</li>
+<li>0 : None of the above</li>
+</ul>
+<p>以如下代码为例：</p>
+<pre><code>public static ReentrantLock lock = new ReentrantLock();
+public static int i;
+public static Runnable run = () -&gt; {
+    for (int j = 0; j &lt; 10; j++) {
+        lock.lock();
+        i++;
+        lock.unlock();
+    }
+};
+public static void main(String[] args) {
+    List&lt;Thread&gt; list = Stream.generate(()-&gt; new Thread(run)).limit(3).collect(Collectors.toList());
+    list.stream().forEach(t -&gt; t.start());
+    list.stream().forEach(t -&gt; {
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    });
+    System.out.println(i);
+}</code></pre><ol>
+<li><p>首先创建的是一个非公平锁，所以 ReentrantLock 的 sync 持有的是 NonfairSync 实例，当第一个线程去执行 lock 方法获取锁时：</p>
+<pre><code>final void lock() {
+    if (compareAndSetState(0, 1))
+        setExclusiveOwnerThread(Thread.currentThread());
+    else
+        acquire(1);
+}</code></pre><p> cas 操作成功获得锁，设置 ExclusiveOwnerThread 继续执行业务逻辑</p>
+</li>
+<li><p>第二个线程执行 lock 方法时，假设第一个线程还没有释放锁，这时 cas 操作失败，执行 acquire(1) , 在 acquire 中：</p>
+<pre><code>public final void acquire(int arg) {
+    if (!tryAcquire(arg) &amp;&amp;
+        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        selfInterrupt();
+}</code></pre><p> 首先调用 tryAcquire 注意这里调用的是 NonfairSync 的 tryAcquire 方法，最终调用 nonfairTryAcquire 再次尝试获取锁，或者可能是已经持有锁的线程再次获取锁把 state + 1</p>
+<pre><code>final boolean nonfairTryAcquire(int acquires) {
+    final Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        if (compareAndSetState(0, acquires)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    }
+    else if (current == getExclusiveOwnerThread()) {
+        int nextc = c + acquires;
+        if (nextc &lt; 0) // overflow
+            throw new Error(&quot;Maximum lock count exceeded&quot;);
+        setState(nextc);
+        return true;
+    }
+    return false;
+}</code></pre><p> 这里返回 false 然后 acquire 中调用 addWaiter 把节点加入队列尾部：</p>
+<pre><code>private Node addWaiter(Node mode) {
+    Node node = new Node(Thread.currentThread(), mode);
+    // Try the fast path of enq; backup to full enq on failure
+    Node pred = tail;
+    if (pred != null) {
+        node.prev = pred;
+        if (compareAndSetTail(pred, node)) {
+            pred.next = node;
+            return node;
+        }
+    }
+    enq(node);
+    return node;
+}</code></pre><p> 这里队列为空时或者 cas 操作失败时会执行 enq(node) 操作：</p>
+<pre><code>private Node enq(final Node node) {
+    for (;;) {
+        Node t = tail;
+        if (t == null) { // Must initialize
+            if (compareAndSetHead(new Node()))
+                tail = head;
+        } else {
+            node.prev = t;
+            if (compareAndSetTail(t, node)) {
+                t.next = node;
+                return t;
+            }
+        }
+    }
+}</code></pre><p> 入队列完成后执行 acquireQueued 方法：</p>
+<pre><code>final boolean acquireQueued(final Node node, int arg) {
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head &amp;&amp; tryAcquire(arg)) {
+                setHead(node);
+                p.next = null; // help GC
+                failed = false;
+                return interrupted;
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}</code></pre><p> 在这个方法中判断节点的前驱结点是不是头结点，如果是头结点，再次尝试获取锁，如果不是调用 shouldParkAfterFailedAcquire 判断是不是应该挂起：</p>
+<pre><code>private static boolean shouldParkAfterFailedAcquire(Node pre, Node node) {
+    int ws = pred.waitStatus;
+    if (ws == Node.SIGNAL)
+        return true;
+    if (ws &gt; 0) {
+        do {
+            node.prev = pred = pred.prev;
+        } while (pred.waitStatus &gt; 0);
+        pred.next = node;
+    } else {
+        compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+    }
+    return false;
+}</code></pre><p> 如果前一个节点也是 Node.SIGNAL 状态，那就返回 true ,否则判断前一个节点的状态是不是被取消的状态，如果是移除节点。否则改变前一个节点的状态为 Node.SIGNAL 。最后返回false。</p>
+<p> 这时再次跳到 acquireQueued 的 for 循环中，然后再次进入 shouldParkAfterFailedAcquire，如果这次返回结果为 true 则调用 parkAndCheckInterrupt 方法，这个方法会阻塞当前线程。</p>
+<pre><code>private final boolean parkAndCheckInterrupt() {
+    LockSupport.park(this);
+    return Thread.interrupted();
+}</code></pre><p> 这里的阻塞需要在 unlock 中唤醒才能够继续执行，如果线程没有被中断过，则返回fales 返回到 acquireQueued 中去继续锁的竞争。</p>
+</li>
+<li><p>公平锁与非公平锁的区别在于 tryAcquire 方法，公平锁的 tryAcquire 方法 ： </p>
+<pre><code>protected final boolean tryAcquire(int acquires) {
+    final Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        if (!hasQueuedPredecessors() &amp;&amp;
+            compareAndSetState(0, acquires)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    }
+    else if (current == getExclusiveOwnerThread()) {
+        int nextc = c + acquires;
+        if (nextc &lt; 0)
+            throw new Error(&quot;Maximum lock count exceeded&quot;);
+        setState(nextc);
+        return true;
+    }
+    return false;
+}</code></pre><p> 主要在这一句 if (!hasQueuedPredecessors() &amp;&amp; compareAndSetState(0, acquires)) 保证等待时间最长的线程才能参与锁竞争。</p>
+<p> 另外一个区别在 locl 方法，不会再去尝试获取锁，而是直接调用 acquire 方法。</p>
+<pre><code>final void lock() {
+    acquire(1);
+}</code></pre></li>
+</ol>
+<ol start="4">
+<li><p>unlock 会调用 release 方法， </p>
+<pre><code>public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        Node h = head;
+        if (h != null &amp;&amp; h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}</code></pre><p> 其中 tryRelease 方法在一个线程持有的锁全部释放时放回 true</p>
+<pre><code>protected final boolean tryRelease(int releases) {
+    int c = getState() - releases;
+    if (Thread.currentThread() != getExclusiveOwnerThread())
+        throw new IllegalMonitorStateException();
+    boolean free = false;
+    if (c == 0) {
+        free = true;
+        setExclusiveOwnerThread(null);
+    }
+    setState(c);
+    return free;
+}</code></pre><p> 当 tryRelease 返回 true 会，会调用 unparkSuccessor 唤醒等待的线程。</p>
+<pre><code>private void unparkSuccessor(Node node) {
+    int ws = node.waitStatus;
+    // 清理状态
+    if (ws &lt; 0)
+        compareAndSetWaitStatus(node, ws, 0);
+    Node s = node.next;
+    if (s == null || s.waitStatus &gt; 0) {
+        s = null;
+        for (Node t = tail; t != null &amp;&amp; t != node; t = t.prev)
+            if (t.waitStatus &lt;= 0)
+                s = t;
+    }
+    if (s != null)
+        LockSupport.unpark(s.thread);
+}</code></pre></li>
+</ol>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/21/java-parallel-abstractqueuedsynchronizer/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">AbstractQueuedSynchronizer 的共享锁独占锁实现</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/19/java-parallel-basis/">
+        <span class="next-text nav-default">java 并发基础</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

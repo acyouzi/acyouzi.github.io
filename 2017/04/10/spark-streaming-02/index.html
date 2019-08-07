@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Spark源码-streaming-02-接收数据的可靠性">
+
+
+
+
+  <meta name="keywords" content="spark,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/04/10/spark-streaming-02/">
+
+
+<meta name="description" content="总结 一个疑惑：在接收的数据真正交给 blockmanager 之前是在 blockgenerate 中存储的，这里面并没有任何持久化保证，也就是说如果这个时候宕机是不是当前在 blockgenerate 中还没有交个 blockManager 的数据会全部丢失掉？ 默认情况下 spark streaming 使用 BlockManagerBasedBlockHandler 保存块，并且默认持久化">
+<meta name="keywords" content="spark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark源码-streaming-02-接收数据的可靠性">
+<meta property="og:url" content="http://acyouzi.com/2017/04/10/spark-streaming-02/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="总结 一个疑惑：在接收的数据真正交给 blockmanager 之前是在 blockgenerate 中存储的，这里面并没有任何持久化保证，也就是说如果这个时候宕机是不是当前在 blockgenerate 中还没有交个 blockManager 的数据会全部丢失掉？ 默认情况下 spark streaming 使用 BlockManagerBasedBlockHandler 保存块，并且默认持久化">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:56:46.535Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark源码-streaming-02-接收数据的可靠性">
+<meta name="twitter:description" content="总结 一个疑惑：在接收的数据真正交给 blockmanager 之前是在 blockgenerate 中存储的，这里面并没有任何持久化保证，也就是说如果这个时候宕机是不是当前在 blockgenerate 中还没有交个 blockManager 的数据会全部丢失掉？ 默认情况下 spark streaming 使用 BlockManagerBasedBlockHandler 保存块，并且默认持久化">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Spark源码-streaming-02-接收数据的可靠性 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Spark源码-streaming-02-接收数据的可靠性
+        
+      </h1>
+
+      <time class="post-time">
+          Apr 10 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>一个疑惑：在接收的数据真正交给 blockmanager 之前是在 blockgenerate 中存储的，这里面并没有任何持久化保证，也就是说如果这个时候宕机是不是当前在 blockgenerate 中还没有交个 blockManager 的数据会全部丢失掉？</li>
+<li>默认情况下 spark streaming 使用 BlockManagerBasedBlockHandler 保存块，并且默认持久化策略是 MEMORY_AND_DISK_SER_2</li>
+<li>WriteAheadLogBasedBlockHandler 默认使用 FileBasedWriteAheadLog 写日志，这种方式每个一段时间( spark.streaming.receiver.writeAheadLog.rollingIntervalSecs ) 滚动一次，生成一个新的日志文件，使得单个日志文件不会太大。</li>
+<li>Kafka 的 DirectStream 另外一种数据可靠性的方法，这种方法跳出了正在 spark streaming 的模式，不会再单独启动 Receiver 接收数据</li>
+<li>DirectStream 相当于是把 Kafka 看做类似 HDFS 一样的底层文件系统，由 Spark Streaming 来负责整个 offset 的侦测、batch 分配、实际读取数据，些分 batch 的信息都是 checkpoint 到了可靠存储中。</li>
+</ol>
+<h2 id="reciver-预写日志"><a href="#reciver-预写日志" class="headerlink" title="reciver 预写日志"></a>reciver 预写日志</h2><ol>
+<li><p>如果我们在 spark stream 的配置文件中指定了 spark.streaming.receiver.writeAheadLog.enable 为 true ，则 ReceiverSupervisorImpl 实例化时得到的 receivedBlockHandler 实例是一个 WriteAheadLogBasedBlockHandler，还有一个需要注意的地方是不管创建的是 WriteAheadLogBasedBlockHandler 还是 BlockManagerBasedBlockHandler 都会传入一个 storageLevel ,这个参数配置的是底层 blockManager 的持久化级别，默认是 MEMORY_AND_DISK_SER_2 ，如果已经开启乐预写日志可以把持久化级别后面的 2 给去掉。</p>
+<pre><code>private val receivedBlockHandler: ReceivedBlockHandler = {
+  if (WriteAheadLogUtils.enableReceiverLog(env.conf)) {
+    if (checkpointDirOption.isEmpty) {
+      throw new SparkException(
+        &quot;Cannot enable receiver write-ahead log without checkpoint directory set. &quot; +
+          &quot;Please use streamingContext.checkpoint() to set the checkpoint directory. &quot; +
+          &quot;See documentation for more details.&quot;)
+    }
+    new WriteAheadLogBasedBlockHandler(env.blockManager, env.serializerManager, receiver.streamId,
+      receiver.storageLevel, env.conf, hadoopConf, checkpointDirOption.get)
+  } else {
+    new BlockManagerBasedBlockHandler(env.blockManager, receiver.storageLevel)
+  }
+}</code></pre></li>
+<li><p>WriteAheadLogBasedBlockHandler 的构造函数中会实例化真正负责存储的 writeAheadLog， 具体实例化方法如下：</p>
+<pre><code>private def createLog(
+    isDriver: Boolean,
+    sparkConf: SparkConf,
+    fileWalLogDirectory: String,
+    fileWalHadoopConf: Configuration
+  ): WriteAheadLog = {
+
+  // 配置的预写日志类
+  val classNameOption = if (isDriver) {
+    sparkConf.getOption(DRIVER_WAL_CLASS_CONF_KEY)
+  } else {
+    sparkConf.getOption(RECEIVER_WAL_CLASS_CONF_KEY)
+  }
+  val wal = classNameOption.map { className =&gt;
+    try {
+      // 实例化用户配置的预写日志类
+      instantiateClass(
+        Utils.classForName(className).asInstanceOf[Class[_ &lt;: WriteAheadLog]], sparkConf)
+    } catch {
+      case NonFatal(e) =&gt;
+        throw new SparkException(s&quot;Could not create a write ahead log of class $className&quot;, e)
+    }
+  }.getOrElse {
+    // 默认的预写日志类
+    new FileBasedWriteAheadLog(sparkConf, fileWalLogDirectory, fileWalHadoopConf,
+      getRollingIntervalSecs(sparkConf, isDriver), getMaxFailures(sparkConf, isDriver),
+      shouldCloseFileAfterWrite(sparkConf, isDriver))
+  }
+  // 受参数 spark.streaming.driver.writeAheadLog.allowBatching 控制
+  // 这个类另外开启了一个线程负责存储
+  // 调用 write 方法时仅仅是把消息存储到一个队列里面
+  // 真正存储时会对队列中所以的消息按时间排序，并聚合成一条消息
+  // 然后使用前面创建的 wal 实例写入
+  if (isBatchingEnabled(sparkConf, isDriver)) {
+    new BatchedWriteAheadLog(wal, sparkConf)
+  } else {
+    wal
+  }
+}</code></pre></li>
+<li><p>下面看 FileBasedWriteAheadLog 类, 看这个类的 write 具体实现：</p>
+<pre><code>def write(byteBuffer: ByteBuffer, time: Long): FileBasedWriteAheadLogSegment = synchronized {
+  var fileSegment: FileBasedWriteAheadLogSegment = null
+  var failures = 0
+  var lastException: Exception = null
+  var succeeded = false
+  while (!succeeded &amp;&amp; failures &lt; maxFailures) {
+    try {
+      // 关键是这里，根据时间得到 LogWriter
+      // 每个 LogWriter 对应一个日志文件，滚动日志
+      fileSegment = getLogWriter(time).write(byteBuffer)
+      if (closeFileAfterWrite) {
+        resetWriter()
+      }
+      succeeded = true
+    } catch {
+      case ex: Exception =&gt;
+        lastException = ex
+        logWarning(&quot;Failed to write to write ahead log&quot;)
+        resetWriter()
+        failures += 1
+    }
+  }
+  if (fileSegment == null) {
+    logError(s&quot;Failed to write to write ahead log after $failures failures&quot;)
+    throw lastException
+  }
+  fileSegment
+}</code></pre><p> getLogWriter 方法， 多长时间滚动一次可以通过如下参数控制 spark.streaming.receiver.writeAheadLog.rollingIntervalSecs</p>
+<pre><code>private def getLogWriter(currentTime: Long): FileBasedWriteAheadLogWriter = synchronized {
+  if (currentLogWriter == null || currentTime &gt; currentLogWriterStopTime) {
+    resetWriter()
+    currentLogPath.foreach {
+      pastLogs += LogInfo(currentLogWriterStartTime, currentLogWriterStopTime, _)
+    }
+    currentLogWriterStartTime = currentTime
+    currentLogWriterStopTime = currentTime + (rollingIntervalSecs * 1000)
+    val newLogPath = new Path(logDirectory,
+      timeToLogFile(currentLogWriterStartTime, currentLogWriterStopTime))
+    currentLogPath = Some(newLogPath.toString)
+    currentLogWriter = new FileBasedWriteAheadLogWriter(currentLogPath.get, hadoopConf)
+  }
+  currentLogWriter
+}</code></pre><p> 然后 write 方法调用 hadoop API 向 hadoop 写数据</p>
+</li>
+<li><p>WriteAheadLogBasedBlockHandler#storeBlock 方法中同时向 blockmanager 还有 writeAheadLog 写日志，实现了 reciver 上的可靠性</p>
+<pre><code>def storeBlock(blockId: StreamBlockId, block: ReceivedBlock): ReceivedBlockStoreResult = {
+
+  var numRecords = Option.empty[Long]
+  // Serialize the block so that it can be inserted into both
+  val serializedBlock = block match {
+    case ArrayBufferBlock(arrayBuffer) =&gt;
+      numRecords = Some(arrayBuffer.size.toLong)
+      serializerManager.dataSerialize(blockId, arrayBuffer.iterator)
+    case IteratorBlock(iterator) =&gt;
+      val countIterator = new CountingIterator(iterator)
+      val serializedBlock = serializerManager.dataSerialize(blockId, countIterator)
+      numRecords = countIterator.count
+      serializedBlock
+    case ByteBufferBlock(byteBuffer) =&gt;
+      new ChunkedByteBuffer(byteBuffer.duplicate())
+    case _ =&gt;
+      throw new Exception(s&quot;Could not push $blockId to block manager, unexpected block type&quot;)
+  }
+
+  // Store the block in block manager
+  val storeInBlockManagerFuture = Future {
+    val putSucceeded = blockManager.putBytes(
+      blockId,
+      serializedBlock,
+      effectiveStorageLevel,
+      tellMaster = true)
+    if (!putSucceeded) {
+      throw new SparkException(
+        s&quot;Could not store $blockId to block manager with storage level $storageLevel&quot;)
+    }
+  }
+
+  // Store the block in write ahead log
+  val storeInWriteAheadLogFuture = Future {
+    writeAheadLog.write(serializedBlock.toByteBuffer, clock.getTimeMillis())
+  }
+
+  // Combine the futures, wait for both to complete, and return the write ahead log record handle
+  val combinedFuture = storeInBlockManagerFuture.zip(storeInWriteAheadLogFuture).map(_._2)
+  val walRecordHandle = ThreadUtils.awaitResult(combinedFuture, blockStoreTimeout)
+  WriteAheadLogBasedStoreResult(blockId, numRecords, walRecordHandle)
+}</code></pre></li>
+</ol>
+<h2 id="Kafka-Direct-API"><a href="#Kafka-Direct-API" class="headerlink" title="Kafka Direct API"></a>Kafka Direct API</h2><pre><code>val kafkaParams = Map[String, String](
+  &quot;bootstrap.servers&quot; -&gt; &quot;localhost:9092,anotherhost:9092&quot;,
+  &quot;group.id&quot; -&gt; &quot;use_a_separate_group_id_for_each_stream&quot;,
+  &quot;auto.offset.reset&quot; -&gt; &quot;latest&quot;
+)
+val topics = Set(&quot;topicA&quot;, &quot;topicB&quot;)
+val stream = KafkaUtils.createDirectStream(ssc,kafkaParams,topics)</code></pre><ol>
+<li><p>createDirectStream 创建的 DirectKafkaInputDStream 对象继承自 InputDStream 而非是 ReceiverInputDStream，这一点很重要因为这种 Direct 方式并不会使用 receiver 接收数据，也就没有必要使用 receiverTracker 去启动 receiver 了。而代码中判断是不是需要启动 Receiver 的依据正是是否继承自 ReceiverInputDStream</p>
+<pre><code>def getReceiverInputStreams(): Array[ReceiverInputDStream[_]] = this.synchronized {
+  inputStreams.filter(_.isInstanceOf[ReceiverInputDStream[_]])
+    .map(_.asInstanceOf[ReceiverInputDStream[_]])
+    .toArray
+}</code></pre></li>
+<li><p>在使用 DStream 生成 RDD 时最终会调用到 DirectKafkaInputDStream 的 compute 方法，而在这个方法中创建的是一个 KafkaRDD，然后就到了关键的地方了, 考虑 RDD 的调用链，每个 RDD 都需要前一个 RDD 返回的 Iterator. 看下面的方法：</p>
+<pre><code>override def compute(thePart: Partition, context: TaskContext): Iterator[R] = {
+  val part = thePart.asInstanceOf[KafkaRDDPartition]
+  assert(part.fromOffset &lt;= part.untilOffset, errBeginAfterEnd(part))
+  if (part.fromOffset == part.untilOffset) {
+    log.info(s&quot;Beginning offset ${part.fromOffset} is the same as ending offset &quot; +
+      s&quot;skipping ${part.topic} ${part.partition}&quot;)
+    Iterator.empty
+  } else {
+    new KafkaRDDIterator(part, context)
+  }
+}</code></pre><p> 在 KafkaRDDIterator 会创建针对 topic 的 consumer，然后就可以直接从 Kafka 中取数据了，这里相当于把 Kafka 当成类似于 HDFS 一样的数据源。</p>
+</li>
+</ol>
+<h2 id="忽略"><a href="#忽略" class="headerlink" title="忽略"></a>忽略</h2><p>最后，如果应用的实时性需求大于准确性，那么一块数据丢失后我们也可以选择忽略、不恢复失效的源头数据。</p>
+<p>忽略可以分为细粒度忽略和粗粒度忽略，具体请看<br><a href="https://github.com/lw-lin/CoolplaySpark/blob/master/Spark%20Streaming%20%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/4.1%20Executor%20%E7%AB%AF%E9%95%BF%E6%97%B6%E5%AE%B9%E9%94%99%E8%AF%A6%E8%A7%A3.md#4-忽略" target="_blank" rel="noopener"> 超超超连接 </a></p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/spark/">spark</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/04/12/spark-streaming-03/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Spark源码-streaming-03-driver 可靠性</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/04/05/spark-streaming-01/">
+        <span class="next-text nav-default">Spark源码-streaming-01-Job 生成</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="AbstractQueuedSynchronizer 的共享锁独占锁实现">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/21/java-parallel-abstractqueuedsynchronizer/">
+
+
+<meta name="description" content="AbstractQueuedSynchronizer 可用作为一个同步工具的基础，持有一个volatile int state的属性，表示同步的状态。使用 cas 操作修改 state 保证线程安全。内部使用 LockSupport 来阻塞唤醒线程，维护链表来表示等待锁的队列。 链表的节点结构如下 int waitStatus 有如下四中状态  SIGNAL -1 : 表示节点的后继节点已经阻塞或">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AbstractQueuedSynchronizer 的共享锁独占锁实现">
+<meta property="og:url" content="http://acyouzi.com/2016/11/21/java-parallel-abstractqueuedsynchronizer/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="AbstractQueuedSynchronizer 可用作为一个同步工具的基础，持有一个volatile int state的属性，表示同步的状态。使用 cas 操作修改 state 保证线程安全。内部使用 LockSupport 来阻塞唤醒线程，维护链表来表示等待锁的队列。 链表的节点结构如下 int waitStatus 有如下四中状态  SIGNAL -1 : 表示节点的后继节点已经阻塞或">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:00:46.348Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AbstractQueuedSynchronizer 的共享锁独占锁实现">
+<meta name="twitter:description" content="AbstractQueuedSynchronizer 可用作为一个同步工具的基础，持有一个volatile int state的属性，表示同步的状态。使用 cas 操作修改 state 保证线程安全。内部使用 LockSupport 来阻塞唤醒线程，维护链表来表示等待锁的队列。 链表的节点结构如下 int waitStatus 有如下四中状态  SIGNAL -1 : 表示节点的后继节点已经阻塞或">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> AbstractQueuedSynchronizer 的共享锁独占锁实现 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          AbstractQueuedSynchronizer 的共享锁独占锁实现
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 21 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <p>AbstractQueuedSynchronizer 可用作为一个同步工具的基础，持有一个volatile int state的属性，表示同步的状态。使用 cas 操作修改 state 保证线程安全。内部使用 LockSupport 来阻塞唤醒线程，维护链表来表示等待锁的队列。</p>
+<h3 id="链表的节点结构如下"><a href="#链表的节点结构如下" class="headerlink" title="链表的节点结构如下"></a>链表的节点结构如下</h3><ul>
+<li>int waitStatus 有如下四中状态<br>  SIGNAL -1 : 表示节点的后继节点已经阻塞或即将阻塞，需要信号唤醒<br>  CANCELLED 1 : 因为超时或中断取消等待<br>  CONDITION -2 : 等待某个条件而被阻塞，在条件队列里面<br>  PROPAGATE -3 : 共享模式中使用，表示当前场景下后续的acquireShared能够得以执行<br>  0 : None of the above</li>
+<li>Node prev    前驱节点</li>
+<li>Node next    后继节点。</li>
+<li>Node nextWaiter    存储condition队列中的后继节点</li>
+<li>Thread thread    关联的线程实例</li>
+</ul>
+<h3 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h3><p>需要重写如下两个方法</p>
+<pre><code>protected boolean tryAcquire(int arg)
+protected boolean tryRelease(int arg)</code></pre><h4 id="获取锁"><a href="#获取锁" class="headerlink" title="获取锁"></a>获取锁</h4><p>独占模式在同一时刻只能有一个线程获得锁，调用 acquire 获取锁：</p>
+<pre><code>public final void acquire(int arg) {
+    if (!tryAcquire(arg) &amp;&amp;
+        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        selfInterrupt();
+}</code></pre><p>这里面首先会调用我们重写的 tryAcquire 方法来尝试获取锁，如果获取失败加入队列，然后调用 acquireQueued 。</p>
+<pre><code>final boolean acquireQueued(final Node node, int arg) {
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head &amp;&amp; tryAcquire(arg)) {
+                setHead(node);
+                p.next = null; // help GC
+                failed = false;
+                return interrupted;
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}</code></pre><p>在这里面会再次尝试获取锁，即使被阻塞，唤醒之后还会进入这里面尝试获取锁。当能够执行到 parkAndCheckInterrupt 时会被阻塞：</p>
+<pre><code>private final boolean parkAndCheckInterrupt() {
+    LockSupport.park(this);
+    return Thread.interrupted();
+}</code></pre><p>当被阻塞的线程被唤醒时会执行 Thread.interrupted() 判断线程有没有被中断过，同时会清除中断状态，返回 true or false 。从这里开这种方法对中断好像不太敏感，要等到被唤醒并且抢到锁时才能对中断做出响应。</p>
+<h4 id="释放锁"><a href="#释放锁" class="headerlink" title="释放锁"></a>释放锁</h4><p>只会唤醒一个线程</p>
+<pre><code>public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        Node h = head;
+        if (h != null &amp;&amp; h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}</code></pre><p>首先调用我们自己定义的释放锁的方法，如果释放成功，从等待队列中选一个线程唤醒 LockSupport.unpark(s.thread); </p>
+<h4 id="关于-tryAcquire-tryRelease-的重写，以及公平锁"><a href="#关于-tryAcquire-tryRelease-的重写，以及公平锁" class="headerlink" title="关于 tryAcquire tryRelease 的重写，以及公平锁"></a>关于 tryAcquire tryRelease 的重写，以及公平锁</h4><p>参展一些现有的实现 tryAcquire tryRelease 中一般需要使用 cas 修改 state 值，然后修改独占模式的运行线程引用。</p>
+<pre><code>protected boolean tryAcquire(int arg) {
+    if (compareAndSetState(0,1)) {
+        setExclusiveOwnerThread(Thread.currentThread());
+        return true;
+    }
+    return false;
+}
+protected boolean tryRelease(int arg) {
+    if (Thread.currentThread() != getExclusiveOwnerThread())
+            throw new IllegalMonitorStateException();
+    if (compareAndSetState(1,0)) {
+        setExclusiveOwnerThread(null);
+        return true;
+    }
+    return false;
+}</code></pre><p>如果要实现公平锁，一般在 tryAcquire 的 if 语句中加一个 判断当前节点是不是等待最久的节点的函数，让对列中等待最久的节点获得锁，同时禁止不在队列里面的节点获取锁。</p>
+<h4 id="tryAcquireNanos"><a href="#tryAcquireNanos" class="headerlink" title="tryAcquireNanos"></a>tryAcquireNanos</h4><p>用于实现有限时间的锁等待</p>
+<p>关键代码是调用的 doAcquireNanos 函数，关键部分如下：</p>
+<pre><code>for (;;) {
+    final Node p = node.predecessor();
+    if (p == head &amp;&amp; tryAcquire(arg)) {
+        setHead(node);
+        p.next = null; // help GC
+        failed = false;
+        return true;
+    }
+    nanosTimeout = deadline - System.nanoTime();
+    if (nanosTimeout &lt;= 0L)
+        return false;
+    if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;
+        nanosTimeout &gt; spinForTimeoutThreshold)
+        LockSupport.parkNanos(this, nanosTimeout);
+    if (Thread.interrupted())
+        throw new InterruptedException();
+}</code></pre><p>使用 LockSupport.parkNanos(this, nanosTimeout) 实现有限时间挂起。 </p>
+<h4 id="acquireInterruptibly"><a href="#acquireInterruptibly" class="headerlink" title="acquireInterruptibly"></a>acquireInterruptibly</h4><p>可中断的锁等待</p>
+<p>关键代码是如下部分：</p>
+<pre><code>for (;;) {
+    final Node p = node.predecessor();
+    if (p == head &amp;&amp; tryAcquire(arg)) {
+        setHead(node);
+        p.next = null; // help GC
+        failed = false;
+        return;
+    }
+    if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;
+        parkAndCheckInterrupt())
+        throw new InterruptedException();
+}</code></pre><p>当 parkAndCheckInterrupt 挂起结束返回，参与锁的竞争时，如果被设置过中断则直接抛出中断异常，不是等到获取锁然后在返回时中断。</p>
+<h3 id="共享锁"><a href="#共享锁" class="headerlink" title="共享锁"></a>共享锁</h3><p>需要重写如下两个方法：</p>
+<pre><code>protected int tryAcquireShared(int arg)
+protected boolean tryReleaseShared(int arg)</code></pre><h4 id="获取锁-1"><a href="#获取锁-1" class="headerlink" title="获取锁"></a>获取锁</h4><p>只要还有锁线程来了就能获取，当锁不够时 tryAcquireShared 返回值小于 0, 然后调用 doAcquireShared 方法。</p>
+<pre><code>public final void acquireShared(int arg) {
+    if (tryAcquireShared(arg) &lt; 0)
+        doAcquireShared(arg);
+}</code></pre><p>在 doAcquireShared 方法中首先添加节点到队列中，然后在进入循环后，如果当前节点是首节点，还会进行一次</p>
+<pre><code>private void doAcquireShared(int arg) {
+    final Node node = addWaiter(Node.SHARED);
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head) {
+                int r = tryAcquireShared(arg);
+                if (r &gt;= 0) {
+                    setHeadAndPropagate(node, r);
+                    p.next = null; // help GC
+                    if (interrupted)
+                        selfInterrupt();
+                    failed = false;
+                    return;
+                }
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}</code></pre><p>最后调用 parkAndCheckInterrupt 部分跟 独占锁完全相同。</p>
+<h4 id="释放锁-1"><a href="#释放锁-1" class="headerlink" title="释放锁"></a>释放锁</h4><p>在 doReleaseShared 中会唤醒多个阻塞的线程</p>
+<pre><code>public final boolean releaseShared(int arg) {
+    if (tryReleaseShared(arg)) {
+        doReleaseShared();
+        return true;
+    }
+    return false;
+}</code></pre><p>首先调用我们自己定义的 tryReleaseShared，当 tryReleaseShared 成功之后调用  doReleaseShared 唤醒等待的线程</p>
+<pre><code>private void doReleaseShared() {
+    for (;;) {
+        Node h = head;
+        if (h != null &amp;&amp; h != tail) {
+            int ws = h.waitStatus;
+            if (ws == Node.SIGNAL) {
+                // cas 操作
+                if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    continue;            // loop to recheck cases
+                // 选一个线程唤醒
+                unparkSuccessor(h);
+            }
+            else if (ws == 0 &amp;&amp;
+                     !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                continue;                // loop on failed CAS
+        }
+        if (h == head)                   // loop if head changed
+            break;
+    }
+}</code></pre><h4 id="tryAcquireShared-tryReleaseShared-的重写"><a href="#tryAcquireShared-tryReleaseShared-的重写" class="headerlink" title="tryAcquireShared tryReleaseShared 的重写"></a>tryAcquireShared tryReleaseShared 的重写</h4><p>因为可以有多个线程持有锁，任何线程都可以释放共享锁，因而不必在重写时设置锁的持有者。大体可以重写为一下形式：</p>
+<pre><code>protected int tryAcquireShared(int acquires) {
+    for (;;) {
+        int available = getState();
+        int remaining = available - acquires;
+        if (remaining &lt; 0 || compareAndSetState(available, remaining))
+            return remaining;
+    }
+}
+
+protected boolean tryReleaseShared(int releases) {
+    for (;;) {
+        int c = getState();
+        if (compareAndSetState(c, c+releases ))
+            return nextc == 0;
+    }
+}</code></pre><h3 id="protected-boolean-isHeldExclusively"><a href="#protected-boolean-isHeldExclusively" class="headerlink" title="protected boolean isHeldExclusively()"></a>protected boolean isHeldExclusively()</h3><p>这个函数也需要自己实现，不同的业务逻辑有不同的实现方式，如重入锁中有如下实现：</p>
+<pre><code>protected final boolean isHeldExclusively() {
+    return getExclusiveOwnerThread() == Thread.currentThread();
+}</code></pre><p>在 ThreadPoolExecutor 中有不同的实现</p>
+<pre><code>protected boolean isHeldExclusively() {
+    return getState() != 0;
+}</code></pre>
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/21/java-parallel-condition/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Condition 的使用与原理</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/20/java-parallel-reentrantlock/">
+        <span class="next-text nav-default">ReentrantLock 重入锁使用与实现</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

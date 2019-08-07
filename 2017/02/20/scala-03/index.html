@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="scala 学习 03 对象">
+
+
+
+
+  <meta name="keywords" content="scala,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/02/20/scala-03/">
+
+
+<meta name="description" content="objectobject，相当于class的单个实例，通常在里面放一些静态的field或者method 第一次调用object的方法时，就会执行object的constructor，也就是object内部不在method中的代码, 但是object不能定义接受参数的constructor,object的constructor只会在其第一次被调用时执行一次，以后再次调用就不会再次执行construc">
+<meta name="keywords" content="scala">
+<meta property="og:type" content="article">
+<meta property="og:title" content="scala 学习 03 对象">
+<meta property="og:url" content="http://acyouzi.com/2017/02/20/scala-03/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="objectobject，相当于class的单个实例，通常在里面放一些静态的field或者method 第一次调用object的方法时，就会执行object的constructor，也就是object内部不在method中的代码, 但是object不能定义接受参数的constructor,object的constructor只会在其第一次被调用时执行一次，以后再次调用就不会再次执行construc">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:02:34.918Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="scala 学习 03 对象">
+<meta name="twitter:description" content="objectobject，相当于class的单个实例，通常在里面放一些静态的field或者method 第一次调用object的方法时，就会执行object的constructor，也就是object内部不在method中的代码, 但是object不能定义接受参数的constructor,object的constructor只会在其第一次被调用时执行一次，以后再次调用就不会再次执行construc">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> scala 学习 03 对象 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          scala 学习 03 对象
+        
+      </h1>
+
+      <time class="post-time">
+          Feb 20 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h1 id="object"><a href="#object" class="headerlink" title="object"></a>object</h1><p>object，相当于class的单个实例，通常在里面放一些静态的field或者method</p>
+<p>第一次调用object的方法时，就会执行object的constructor，也就是object内部不在method中的代码, 但是object不能定义接受参数的constructor,object的constructor只会在其第一次被调用时执行一次，以后再次调用就不会再次执行constructor了</p>
+<p>object通常用于作为单例模式的实现，或者放class的静态成员，比如工具方法</p>
+<h2 id="单例原理"><a href="#单例原理" class="headerlink" title="单例原理"></a>单例原理</h2><p>下面是我们定义的一个 Object 根据上面的介绍我们大体能猜出调用的执行结果</p>
+<pre><code>object ObjectTest {
+  println(&quot;ObjectTest&quot;)
+  def print(): Unit ={
+    println(&quot;wang wang wang!!!&quot;)
+  }
+}</code></pre><p>编译之后会得到两个 class 文件</p>
+<pre><code>ObjectTest.class
+ObjectTest$.class</code></pre><p>其中 ObjectTest.class 对应 java 代码如下</p>
+<pre><code>public final class ObjectTest
+{
+  public static void print()
+  {
+    ObjectTest..MODULE$.print();
+  }
+}</code></pre><p>这看起来更像是个代理类(仅在没有对应 class 的情况下)，而类的真正逻辑代码放在 ObjectTest$ 类中。</p>
+<pre><code>public final class ObjectTest${
+  public static  MODULE$;
+  static{new ();}
+  public void print()
+  {
+    Predef..MODULE$.println(&quot;wang wang wang!!!&quot;);
+  }
+  private ObjectTest$()
+  {
+    MODULE$ = this;Predef..MODULE$.println(&quot;ObjectTest&quot;);
+  }
+}</code></pre><p>首先构造函数是私有的，然后在 static 代码块中初始化创建类的实例。构造函数给静态公共变量 MODULE$ 赋值，这就是个简单而且标准的单例的写法。</p>
+<p>可以使用 ObjectTest.print() 调用单例对象的方法， 当调用时候我们实际上调用的是代理类的静态方法，然后代理类的静态方法内调用具体实现类</p>
+<h2 id="伴生对象"><a href="#伴生对象" class="headerlink" title="伴生对象"></a>伴生对象</h2><p>如果有一个class，还有一个与class同名的object，那么就称这个object是class的伴生对象，class是object的伴生类</p>
+<p>伴生类和伴生对象必须存放在一个.scala文件之中，类和伴生对象可以相互访问 private field，下面是一个例子：</p>
+<pre><code>class ObjectTest {
+  private var c1 = 100
+  def doSomething(): Unit ={
+    println(&quot;do something &quot; + ObjectTest.o1)
+  }
+}
+object ObjectTest {
+  private val o1 = 200
+  def print(): Unit ={
+    var test = new ObjectTest()
+    println(&quot;wang wang wang!!! &quot; +  test.c1)
+  }
+}</code></pre><p>编译后也是生成两个文件</p>
+<pre><code>ObjectTest.class
+ObjectTest$.class</code></pre><p>ObjectTest.class 中的内容如下，可以看到 ObjectTest.c1 虽然是 private 类型，但是他的 get 方法变成了 public 方法。 我想这就是在伴生对象中能访问类的私有变量的原因吧</p>
+<pre><code>public class ObjectTest
+{
+  public int com$acyouzi$scala$ObjectTest$$c1()
+  {
+    return this.com$acyouzi$scala$ObjectTest$$c1;
+  }
+
+  private void com$acyouzi$scala$ObjectTest$$c1_$eq(int x$1)
+  {
+    this.com$acyouzi$scala$ObjectTest$$c1 = x$1;
+  }
+
+  private int com$acyouzi$scala$ObjectTest$$c1 = 100;
+
+  public void doSomething()
+  {
+    Predef..MODULE$.println(&quot;do something &quot; + ObjectTest..MODULE$.com$acyouzi$scala$ObjectTest$$o1());
+  }
+
+  public static void print()
+  {
+    ObjectTest..MODULE$.print();
+  }
+}</code></pre><p>根据上面的说明你一定以为伴生对象只能获取类的成员变量但是无法修改，因为毕竟 set 方法是 private.</p>
+<p>然而事实总是出人意料，在 object ObjectTest 的 def print() 方法中加一句 test.c1 = 300 你会发现，竟然可以正确运行。然后反编译查看 java 代码，你会发现 set 方法竟然也变成 public 了</p>
+<pre><code>public void com$acyouzi$scala$ObjectTest$$c1_$eq(int x$1)
+{
+  this.com$acyouzi$scala$ObjectTest$$c1 = x$1;
+}</code></pre><p>scala 还真是一门随便的语言。至于为什么类中能访问伴生对象的 private 对象，也是一样的套路，把 private 的 get/set 变成了 public</p>
+<pre><code>public final class ObjectTest$
+{
+  public static  MODULE$;
+  private final int com$acyouzi$scala$ObjectTest$$o1;
+
+  static
+  {
+    new ();
+  }
+
+  public int com$acyouzi$scala$ObjectTest$$o1()
+  {
+    return this.com$acyouzi$scala$ObjectTest$$o1;
+  }
+
+  public void print()
+  {
+    ObjectTest test = new ObjectTest();
+    Predef..MODULE$.println(&quot;wang wang wang!!! &quot; + test.com$acyouzi$scala$ObjectTest$$c1());
+  }
+
+  private ObjectTest$()
+  {
+    MODULE$ = this;this.com$acyouzi$scala$ObjectTest$$o1 = 200;
+  }
+}</code></pre><h2 id="object-继承抽象类"><a href="#object-继承抽象类" class="headerlink" title="object 继承抽象类"></a>object 继承抽象类</h2><p>object也可以继承类，并覆盖类中的方法。</p>
+<pre><code>object ObjectTest extends ConstructorTest{
+  private val o1 = 200
+  override def print(): Unit = {
+    super.print()
+    println(&quot;bbbbb&quot;)
+  }
+}</code></pre><h2 id="apply方法"><a href="#apply方法" class="headerlink" title="apply方法"></a>apply方法</h2><p>通常会在伴生对象中实现 apply 方法，则当创建伴生类的对象时，可以不使用new Class的方式，而是使用Class()的方式，隐式地调用伴生对象得apply方法，这样会让对象创建更加简洁，例如 val arr = Array(1,2,3) 就是调用的 apply 方法</p>
+<pre><code>class ObjectTest(var name: String,var age: Int){
+}
+object ObjectTest extends ConstructorTest{
+  def apply(name: String,age: Int): ObjectTest = new ObjectTest(name,age)
+}
+
+// 调用
+val test = ObjectTest(&quot;acyouzi&quot;,23)</code></pre><h2 id="update-方法"><a href="#update-方法" class="headerlink" title="update 方法"></a>update 方法</h2><p>当你在 Array 对象中使用语法 arr(10) = 100 时实际上就是调用的 update 方法。</p>
+<h2 id="unapply-方法"><a href="#unapply-方法" class="headerlink" title="unapply 方法"></a>unapply 方法</h2><p>提取器，一般就是 apply 的反操作，在模式匹配的 case 中会用到</p>
+<pre><code>case Test(a,b) =&gt; print(a + &quot;  &quot; + b)</code></pre><h2 id="main方法"><a href="#main方法" class="headerlink" title="main方法"></a>main方法</h2><p>如果要运行一个程序，必须编写一个包含main方法类一样，scala中的main方法定义为def main(args: Array[String])。</p>
+<pre><code>object Main {
+  def main(args: Array[String]): Unit = {
+    val test = ObjectTest(&quot;acyouzi&quot;,23)
+    println(test.name +&quot; --- &quot;+ test.age)
+  }
+}</code></pre><p>前面介绍 object 编译会生成两个 class 文件，这里的 Main.class 中实现了实现了 java 的 main 方法。在 main 方法中会调用我们的单例 object 的 main 方法( public void main(String[] args) ) </p>
+<pre><code>public final class Main
+{
+  public static void main(String[] paramArrayOfString)
+  {
+    Main..MODULE$.main(paramArrayOfString);
+  }
+}</code></pre><h2 id="枚举"><a href="#枚举" class="headerlink" title="枚举"></a>枚举</h2><p>用object继承Enumeration类，并且调用Value方法来初始化枚举值</p>
+<pre><code>object Season extends Enumeration {
+  val SPRING, SUMMER, AUTUMN, WINTER = Value
+}
+// 或者传入枚举值的id和name
+object Season extends Enumeration {
+  val SPRING = Value(0, &quot;spring&quot;)
+  val SUMMER = Value(1, &quot;summer&quot;)
+  val AUTUMN = Value(2, &quot;autumn&quot;)
+  val WINTER = Value(3, &quot;winter&quot;)
+}
+// 访问
+Season(0)
+Season.withName(&quot;spring&quot;)</code></pre>
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/scala/">scala</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/02/20/scala-04/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">scala 学习 04 继承</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/02/20/scala-02/">
+        <span class="next-text nav-default">scala 学习 02 类基础</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

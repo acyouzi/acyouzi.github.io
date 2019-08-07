@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Java ASM 库使用及 AOP 示例">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/12/09/java-asm/">
+
+
+<meta name="description" content="ASM 是一个用来操纵字节码的框架，能被用来动态生成类或者增强现有类的功能。 类型描述符和方法描述符在使用 asm 库前需要对类型描述符和方法描述符有所了解，下面仅给出官方文档中的一个描述符的例子，这方面更具体的内容参考 这篇文章   基本使用一般使用流程是，ClassReader 负责遍历类，调用 ClassVisitor , ClassVisitor 中做一些处理，然后调用 ClassWrit">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java ASM 库使用及 AOP 示例">
+<meta property="og:url" content="http://acyouzi.com/2016/12/09/java-asm/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="ASM 是一个用来操纵字节码的框架，能被用来动态生成类或者增强现有类的功能。 类型描述符和方法描述符在使用 asm 库前需要对类型描述符和方法描述符有所了解，下面仅给出官方文档中的一个描述符的例子，这方面更具体的内容参考 这篇文章   基本使用一般使用流程是，ClassReader 负责遍历类，调用 ClassVisitor , ClassVisitor 中做一些处理，然后调用 ClassWrit">
+<meta property="og:locale" content="zh">
+<meta property="og:image" content="http://acyouzi.com/2016/12/09/java-asm/type_desc.png">
+<meta property="og:image" content="http://acyouzi.com/2016/12/09/java-asm/function_desc.png">
+<meta property="og:updated_time" content="2019-08-07T14:01:08.055Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java ASM 库使用及 AOP 示例">
+<meta name="twitter:description" content="ASM 是一个用来操纵字节码的框架，能被用来动态生成类或者增强现有类的功能。 类型描述符和方法描述符在使用 asm 库前需要对类型描述符和方法描述符有所了解，下面仅给出官方文档中的一个描述符的例子，这方面更具体的内容参考 这篇文章   基本使用一般使用流程是，ClassReader 负责遍历类，调用 ClassVisitor , ClassVisitor 中做一些处理，然后调用 ClassWrit">
+<meta name="twitter:image" content="http://acyouzi.com/2016/12/09/java-asm/type_desc.png">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Java ASM 库使用及 AOP 示例 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Java ASM 库使用及 AOP 示例
+        
+      </h1>
+
+      <time class="post-time">
+          Dec 09 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <p>ASM 是一个用来操纵字节码的框架，能被用来动态生成类或者增强现有类的功能。</p>
+<h3 id="类型描述符和方法描述符"><a href="#类型描述符和方法描述符" class="headerlink" title="类型描述符和方法描述符"></a>类型描述符和方法描述符</h3><p>在使用 asm 库前需要对类型描述符和方法描述符有所了解，下面仅给出官方文档中的一个描述符的例子，这方面更具体的内容参考 <a href="/2016/11/10/jvm-class-file-structure/">这篇文章</a></p>
+<p><img src="type_desc.png" alt="type-desc"></p>
+<p><img src="function_desc.png" alt="type-desc"></p>
+<h3 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h3><p>一般使用流程是，ClassReader 负责遍历类，调用 ClassVisitor , ClassVisitor 中做一些处理，然后调用 ClassWriter.</p>
+<ol>
+<li><p>打印类结构实例</p>
+<pre><code>public class ClassPrinter extends ClassVisitor {
+    public ClassPrinter() {
+        super(Opcodes.ASM5);
+    }
+    @Override
+    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+        System.out.println(name + &quot; extends &quot; + superName + &quot; {&quot;);
+    }
+    @Override
+    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+        System.out.println(&quot;    &quot;+desc+&quot; &quot;+ name+&quot;;&quot;);
+        return null;
+    }
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        System.out.println(&quot;    &quot;+desc+&quot; &quot;+ name+&quot;;&quot;);
+        return null;
+    }
+    @Override
+    public void visitEnd() {
+        System.out.println(&quot;}&quot;);
+    }
+}
+
+public class Test {
+    public static void main(String[] args) throws IOException {
+        ClassPrinter printer = new ClassPrinter();
+        ClassReader cr = new ClassReader(&quot;java.lang.Runnable&quot;);
+        cr.accept(printer,0);
+    }
+}</code></pre><p> ClassReader 通过 ClassLoader.getSystemResourceAsStream(name.replace(‘.’, ‘/‘) + “.class”) 获取类文件流，并读取到一个 byte 数组中。然后在 accept 中根据 byte 数组分析类结构，对结构的每一部分调用 ClassVisitor 的相应方法。</p>
+</li>
+<li><p>移除方法</p>
+<pre><code>public class ClassAdapter extends ClassVisitor {
+    public ClassAdapter(ClassWriter cw) {
+        super(Opcodes.ASM5,cw);
+    }
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        if(&quot;xxxx&quot;.equals(name)){
+            return null;
+        }
+        return super.visitMethod(access, name, desc, signature, exceptions);
+    }
+}
+
+public class Test {
+    public static void main(String[] args) throws IOException {
+        ClassReader cr = new ClassReader(&quot;xxx&quot;);
+        ClassWriter cw = new ClassWriter(cr, 0);
+        ClassVisitor cv = new ClassAdapter(cw);
+        cr.accept(cv, 0);
+        byte[] b = cw.toByteArray();
+    }
+}</code></pre><p> new  ClassWriter(cr, 0) 的时候会调用 classReader.copyPool(this) 拷贝 classReader 读取的类的常量池中的内容到 classWriter 中。</p>
+<p> ClassVisitor 持有 ClassWriter 的实例，每次在 accept 方法中被调用相关方法时都会转而去调用 ClassWriter 的相应方法，也就完成了内容写入。</p>
+<p> 在 ClassVisitor 的 visitMethod 方法中会调用 ClassWriter 的 visitMethod 方法，返回一个 MethodWriter 实例， ClassReader 转而调用 MethodWriter 完成方法内容的写入，如果我们不调用 ClassWriter 的 visitMethod 方法，直接返回一个 null 也就不会向 ClassWriter 中写入方法了，也就完成了方法的移除。</p>
+</li>
+</ol>
+<h3 id="实例：AOP"><a href="#实例：AOP" class="headerlink" title="实例：AOP"></a>实例：AOP</h3><ol>
+<li><p>首先定义一个默认拦截器，自定义拦截器可以继承默认拦截器覆盖相应方法。</p>
+<pre><code>public class Interceptor {
+    public void preMethodExec( String name ){
+        return;
+    }
+    public void afterMethodExec( String name ){
+        return;
+    }
+}</code></pre></li>
+<li><p>定义 AopAdapter，继承 ClassVisitor 用于向类中添加字段，修改方法。</p>
+<pre><code>public class AopAdapter extends ClassVisitor {
+    private Interceptor interceptor;
+    private String clazzowner;
+    private boolean isFieldPresent =false;
+
+    public AopAdapter(ClassVisitor cv,String clazzowner) {
+        super(Opcodes.ASM5, cv);
+        this.clazzowner = clazzowner.replace(&apos;.&apos;,&apos;/&apos;);
+    }
+
+    // 判断类中有没有 interceptor 字段
+    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+        if (name.equals(&quot;interceptor&quot;)) {
+            isFieldPresent = true;
+        }
+        return super.visitField(access, name, desc, signature, value);
+    }
+    // 如果类中没有 interceptor 字段，则向 ClassWriter 中添加 interceptor 字段。
+    public void visitEnd() {
+        if (!isFieldPresent) {
+            FieldVisitor fv = cv.visitField(Opcodes.ACC_PUBLIC , &quot;interceptor&quot;, &quot;Lcom/acyouzi/asm/Interceptor;&quot;, null, null);
+            if (fv != null) {
+                fv.visitEnd();
+            }
+        }
+        isFieldPresent = false;
+        cv.visitEnd();
+    }
+    // 包装 MethodWriter 对方法做处理。
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+        if ( (! &quot;&lt;init&gt;&quot;.equals(name)) &amp;&amp; (!&quot;&lt;clinit&gt;&quot;.equals(name)) ) {
+            return new MethodAdapter(mv,name,clazzowner);
+        }
+        return mv;
+    }
+}</code></pre></li>
+<li><p>定义 MethodAdapter 实现对方法的一些操作(在调用方法的开头调用拦截器的 preMethodExec 方法, return 之前调用拦截器的 afterMethodExec)</p>
+<pre><code>public class MethodAdapter extends MethodVisitor {
+    private String name;
+    private String clazzowner;
+    public MethodAdapter(MethodVisitor mv, String name, String clazzowner) {
+        super(Opcodes.ASM5, mv);
+        this.name = name;
+        this.clazzowner = clazzowner;
+    }
+
+    public void visitCode() {
+        super.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD,0);
+        // desc 如果是对象末尾记得加分号
+        mv.visitFieldInsn(Opcodes.GETFIELD,clazzowner,&quot;interceptor&quot;,&quot;Lcom/acyouzi/asm/Interceptor;&quot;);
+        mv.visitLdcInsn(name);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,&quot;com/acyouzi/asm/Interceptor&quot;,&quot;preMethodExec&quot;,&quot;(Ljava/lang/String;)V&quot;,false);
+    }
+
+    @Override
+    public void visitInsn(int opcode) {
+        // 172 - 177 也就是 IRETURN LRETURN FRETURN DRETURN ARETURN RETURN 这几种语句之前。
+        if (opcode &gt;= Opcodes.IRETURN &amp;&amp; opcode &lt;= Opcodes.RETURN){
+            mv.visitVarInsn(Opcodes.ALOAD,0);
+            mv.visitFieldInsn(Opcodes.GETFIELD,clazzowner,&quot;interceptor&quot;,&quot;Lcom/acyouzi/asm/Interceptor;&quot;);
+            mv.visitLdcInsn(name);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,&quot;com/acyouzi/asm/Interceptor&quot;,&quot;afterMethodExec&quot;,&quot;(Ljava/lang/String;)V&quot;,false);
+        }
+        super.visitInsn(opcode);
+    }
+}</code></pre></li>
+<li><p>实现工厂方法，根据 factory.propertie 的配置，加载相应实现类，并且通过 asm 把 interceptor 示例注入进去。</p>
+<pre><code>public class AsmClassLoader {
+    private Interceptor interceptor;
+    private static Properties properties;
+    static {
+        try {
+            properties = new Properties();
+            InputStream is = AsmClassLoader.class.getClassLoader().getResourceAsStream(&quot;factory.properties&quot;);
+            properties.load(is);
+            is.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public AsmClassLoader( Interceptor interceptor) {
+        if( interceptor == null){
+            interceptor = new Interceptor();
+        }
+        this.interceptor = interceptor;
+    }
+
+    public Object getInstance(Class name) throws Exception {
+        String className = (String) properties.get(name.getName());
+        if (className == null) {
+            throw new Exception(&quot;can not find interface impl :&quot; + name);
+        }
+        ClassReader cr = new ClassReader(className);
+        // ClassWriter.COMPUTE_MAXS 自动计算栈的大小
+        ClassWriter cw = new ClassWriter(cr,ClassWriter.COMPUTE_MAXS);
+        cr.accept(new AopAdapter(cw,className), 0);
+        byte[] b = cw.toByteArray();
+
+        Class clazz = new SimpleClassLoader().defineClass(className, b);
+        Constructor con = clazz.getConstructor();
+        Object obj = con.newInstance();
+        Field field = clazz.getField(&quot;interceptor&quot;);
+        field.set(obj,interceptor);
+        return obj;
+    }
+}</code></pre></li>
+<li><p>编写测试类及接口，拦截器实例</p>
+<pre><code>public interface People {
+    String getName();
+    int getAge();
+    void setName( String name );
+    void setAge( int age );
+}
+
+public class PeopleImpl implements People {
+    private String name;
+    private int age;
+    public String getName() {
+        return this.name;
+    }
+    public int getAge() {
+        return this.age;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public void setAge(int age) {
+        this.age = age;
+    }
+}
+
+public class MyInterceptor extends Interceptor {
+    @Override
+    public void preMethodExec(String name) {
+        System.out.println(name + &quot; : start exec&quot;);
+    }
+    @Override
+    public void afterMethodExec(String name) {
+        System.out.println(name + &quot; : finish&quot;);
+    }
+}</code></pre></li>
+<li><p>编写配置文件 factory.propertie</p>
+<pre><code># factory.propertie
+com.acyouzi.asm.People=com.acyouzi.asm.PeopleImpl</code></pre></li>
+<li><p>运行测试</p>
+<pre><code>public class Test {
+    public static void main(String[] args) throws Exception {
+        People people = (People) new AsmClassLoader(new MyInterceptor()).getInstance(People.class);
+        people.setName(&quot;Acyouzi&quot;);
+        people.setAge(22);
+        System.out.println(people.getName()+&quot; : &quot;+people.getAge());
+    }
+}</code></pre></li>
+</ol>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>asm 还有一种 Tree API, 好像用的不多(不太了解)，用 asm 修改方法代码时一定要小心，如果不能确定最好把要添加的逻辑用实际代码写出来，编译一下然后用 javap 命令查看一下编译器是怎么翻译的。另外最好在 new ClassWriter 的时候选择 ClassWriter.COMPUTE_MAXS , 这样会自动计算栈和本地变量表的大小，就不用自己去注意这部分内容了。</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/01/11/disruptor/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Disruptor 学习与使用</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/12/05/mysql-02/">
+        <span class="next-text nav-default">高性能 MySQL 笔记-高级</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

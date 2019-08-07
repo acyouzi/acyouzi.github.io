@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Spark源码-streaming-03-driver 可靠性">
+
+
+
+
+  <meta name="keywords" content="spark,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/04/12/spark-streaming-03/">
+
+
+<meta name="description" content="总结 ReceivedBlockTracker 管理 block 数据，如果配置了 checkpoint 目录，会 ReceivedBlockTracker 会把它管理的数据使用预写日志写入到 HDFS 中 driver 的状态也会在特定的阶段 Checkpoint 到 checkpoint 目录中去 在编写 spark streaming 程序时，创建 StreamingContext 可以预先">
+<meta name="keywords" content="spark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark源码-streaming-03-driver 可靠性">
+<meta property="og:url" content="http://acyouzi.com/2017/04/12/spark-streaming-03/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="总结 ReceivedBlockTracker 管理 block 数据，如果配置了 checkpoint 目录，会 ReceivedBlockTracker 会把它管理的数据使用预写日志写入到 HDFS 中 driver 的状态也会在特定的阶段 Checkpoint 到 checkpoint 目录中去 在编写 spark streaming 程序时，创建 StreamingContext 可以预先">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:02:43.317Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark源码-streaming-03-driver 可靠性">
+<meta name="twitter:description" content="总结 ReceivedBlockTracker 管理 block 数据，如果配置了 checkpoint 目录，会 ReceivedBlockTracker 会把它管理的数据使用预写日志写入到 HDFS 中 driver 的状态也会在特定的阶段 Checkpoint 到 checkpoint 目录中去 在编写 spark streaming 程序时，创建 StreamingContext 可以预先">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Spark源码-streaming-03-driver 可靠性 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Spark源码-streaming-03-driver 可靠性
+        
+      </h1>
+
+      <time class="post-time">
+          Apr 12 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>ReceivedBlockTracker 管理 block 数据，如果配置了 checkpoint 目录，会 ReceivedBlockTracker 会把它管理的数据使用预写日志写入到 HDFS 中</li>
+<li>driver 的状态也会在特定的阶段 Checkpoint 到 checkpoint 目录中去</li>
+<li>在编写 spark streaming 程序时，创建 StreamingContext 可以预先判断有没有 checkpoint 数据，这样在 driver 因故障重启时可以读取 checkpoint 数据恢复到重启前的状态</li>
+</ol>
+<h2 id="ReceivedBlockTracker"><a href="#ReceivedBlockTracker" class="headerlink" title="ReceivedBlockTracker"></a>ReceivedBlockTracker</h2><p>ReceiverTracker 在实例化时会创建一个 receivedBlockTracker，这个对象负责实际的 block 信息管理。</p>
+<p>在这个类的构造函数中可能会创建一个 WriteAheadLog 实例：</p>
+<pre><code>private val writeAheadLogOption = createWriteAheadLog()
+
+private def createWriteAheadLog(): Option[WriteAheadLog] = {
+  checkpointDirOption.map { checkpointDir =&gt;
+    val logDir = ReceivedBlockTracker.checkpointDirToLogDir(checkpointDirOption.get)
+    WriteAheadLogUtils.createLogForDriver(conf, logDir, hadoopConf)
+  }
+}</code></pre><p>然后下面看一个具体的方法：</p>
+<pre><code>def addBlock(receivedBlockInfo: ReceivedBlockInfo): Boolean = {
+  try {
+    // 如果配置了 wal 日志，先写到 wal 日志中
+    // wal 日志持久化到 hdfs 中
+    val writeResult = writeToLog(BlockAdditionEvent(receivedBlockInfo))
+    if (writeResult) {
+      synchronized {
+        getReceivedBlockQueue(receivedBlockInfo.streamId) += receivedBlockInfo
+      }
+      logDebug(s&quot;Stream ${receivedBlockInfo.streamId} received &quot; +
+        s&quot;block ${receivedBlockInfo.blockStoreResult.blockId}&quot;)
+    } else {
+      logDebug(s&quot;Failed to acknowledge stream ${receivedBlockInfo.streamId} receiving &quot; +
+        s&quot;block ${receivedBlockInfo.blockStoreResult.blockId} in the Write Ahead Log.&quot;)
+    }
+    writeResult
+  } catch {
+    case NonFatal(e) =&gt;
+      logError(s&quot;Error adding block $receivedBlockInfo&quot;, e)
+      false
+  }
+}</code></pre><h2 id="Checkpoint"><a href="#Checkpoint" class="headerlink" title="Checkpoint"></a>Checkpoint</h2><ol>
+<li><p>每次 JobGenerator#generateJobs 完成 job 提交时会发送 DoCheckpoint 消息触发 Checkpoint</p>
+<pre><code>private def generateJobs(time: Time) {
+  // Checkpoint all RDDs marked for checkpointing to ensure their lineages are
+  // truncated periodically. Otherwise, we may run into stack overflows (SPARK-6847).
+  ssc.sparkContext.setLocalProperty(RDD.CHECKPOINT_ALL_MARKED_ANCESTORS, &quot;true&quot;)
+  Try {
+    jobScheduler.receiverTracker.allocateBlocksToBatch(time) // allocate received blocks to batch
+    graph.generateJobs(time) // generate jobs using allocated block
+  } match {
+    case Success(jobs) =&gt;
+      val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time)
+      jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos))
+    case Failure(e) =&gt;
+      jobScheduler.reportError(&quot;Error generating jobs for time &quot; + time, e)
+      PythonDStream.stopStreamingContextIfPythonProcessIsDead(e)
+  }
+  eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = false))
+}</code></pre></li>
+<li><p>jobScheduler.submitJobSet 时，分别提交每个 job, 在每个 job 完成时会发送 JobCompleted 事件，这个事件最终也会触发 DoCheckpoint 事件</p>
+<pre><code>private def clearMetadata(time: Time) {
+  ssc.graph.clearMetadata(time)
+
+  // If checkpointing is enabled, then checkpoint,
+  // else mark batch to be fully processed
+  if (shouldCheckpoint) {
+    eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = true))
+  } else {
+    // If checkpointing is not enabled, then delete metadata information about
+    // received blocks (block data not saved in any case). Otherwise, wait for
+    // checkpointing of this batch to complete.
+    val maxRememberDuration = graph.getMaxInputStreamRememberDuration()
+    jobScheduler.receiverTracker.cleanupOldBlocksAndBatches(time - maxRememberDuration)
+    jobScheduler.inputInfoTracker.cleanup(time - maxRememberDuration)
+    markBatchFullyProcessed(time)
+  }
+}</code></pre></li>
+<li><p>doCheckpoint 方法把一个 Checkpoint 对象持久化到 HDFS,同时如果有配置还会清理早期数据</p>
+<pre><code>private def doCheckpoint(time: Time, clearCheckpointDataLater: Boolean) {
+  if (shouldCheckpoint &amp;&amp; (time - graph.zeroTime).isMultipleOf(ssc.checkpointDuration)) {
+    logInfo(&quot;Checkpointing graph for time &quot; + time)
+    ssc.graph.updateCheckpointData(time)
+    checkpointWriter.write(new Checkpoint(ssc, time), clearCheckpointDataLater)
+  } else if (clearCheckpointDataLater) {
+    markBatchFullyProcessed(time)
+  }
+}</code></pre><p> Checkpoint 缓存了如下一些数据：</p>
+<pre><code>val master = ssc.sc.master
+val framework = ssc.sc.appName
+val jars = ssc.sc.jars
+val graph = ssc.graph
+val checkpointDir = ssc.checkpointDir
+val checkpointDuration = ssc.checkpointDuration
+val pendingTimes = ssc.scheduler.getPendingTimes().toArray
+val sparkConfPairs = ssc.conf.getAll</code></pre></li>
+</ol>
+<h2 id="driver-重启"><a href="#driver-重启" class="headerlink" title="driver 重启"></a>driver 重启</h2><pre><code>// Function to create and setup a new StreamingContext
+def functionToCreateContext(): StreamingContext = {
+  val ssc = new StreamingContext(...)   // new context
+  val lines = ssc.socketTextStream(...) // create DStreams
+  ...
+  ssc.checkpoint(checkpointDirectory)   // set checkpoint directory
+  ssc
+}
+
+// Get StreamingContext from checkpoint data or create a new one
+val context = StreamingContext.getOrCreate(checkpointDirectory, functionToCreateContext _)</code></pre><p>如上配置可以使得在重启时优先读取 checkpoint 目录中的数据</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/spark/">spark</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/04/12/spark-streaming-04/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Spark源码-streaming-04-几个重要的算子</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/04/10/spark-streaming-02/">
+        <span class="next-text nav-default">Spark源码-streaming-02-接收数据的可靠性</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

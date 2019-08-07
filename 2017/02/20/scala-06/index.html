@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="scala 学习 06 函数">
+
+
+
+
+  <meta name="keywords" content="scala,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/02/20/scala-06/">
+
+
+<meta name="description" content="函数的的实现使用了 jdk1.7 中新引入的指令 invokedynamic, 其他的 invoke 指令在类加载的解析阶段就已经完成从符号引用到直接引用的替换，但是这条指令会等到实际调用时才进行解析。 java8 的 lambda 表达式调用也是使用这条指令。 函数式编程 将方法转换为函数使用 func _ 这样的语法  函数定义 val xxx = (xxx,…) =&amp;gt; { … }  高">
+<meta name="keywords" content="scala">
+<meta property="og:type" content="article">
+<meta property="og:title" content="scala 学习 06 函数">
+<meta property="og:url" content="http://acyouzi.com/2017/02/20/scala-06/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="函数的的实现使用了 jdk1.7 中新引入的指令 invokedynamic, 其他的 invoke 指令在类加载的解析阶段就已经完成从符号引用到直接引用的替换，但是这条指令会等到实际调用时才进行解析。 java8 的 lambda 表达式调用也是使用这条指令。 函数式编程 将方法转换为函数使用 func _ 这样的语法  函数定义 val xxx = (xxx,…) =&amp;gt; { … }  高">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:57:32.120Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="scala 学习 06 函数">
+<meta name="twitter:description" content="函数的的实现使用了 jdk1.7 中新引入的指令 invokedynamic, 其他的 invoke 指令在类加载的解析阶段就已经完成从符号引用到直接引用的替换，但是这条指令会等到实际调用时才进行解析。 java8 的 lambda 表达式调用也是使用这条指令。 函数式编程 将方法转换为函数使用 func _ 这样的语法  函数定义 val xxx = (xxx,…) =&amp;gt; { … }  高">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> scala 学习 06 函数 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          scala 学习 06 函数
+        
+      </h1>
+
+      <time class="post-time">
+          Feb 20 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <p>函数的的实现使用了 jdk1.7 中新引入的指令 invokedynamic, 其他的 invoke 指令在类加载的解析阶段就已经完成从符号引用到直接引用的替换，但是这条指令会等到实际调用时才进行解析。 java8 的 lambda 表达式调用也是使用这条指令。</p>
+<h1 id="函数式编程"><a href="#函数式编程" class="headerlink" title="函数式编程"></a>函数式编程</h1><ol>
+<li><p>将方法转换为函数使用 func _ 这样的语法</p>
+</li>
+<li><p>函数定义 val xxx = (xxx,…) =&gt; { … }</p>
+</li>
+<li><p>高阶函数是指接受其他函数作为参数的函数，或者将函数作为值返回</p>
+<p> // 接受函数类型参数<br> def xxx(func: (String) =&gt; Unit, id: String) { func(name) }<br> // 返回函数类型参数<br> def xxx(msg: String) = (name: String) =&gt; println(msg + “, “ + name)</p>
+</li>
+<li><p>高阶函数可以自动推断出参数类型，而不需要写明类型</p>
+</li>
+<li><p>对于只有一个参数的函数，还可以省去其小括号</p>
+</li>
+<li><p>如果仅有的一个参数在右侧的函数体内只使用一次，则还可以将接收参数省略，并且将参数用 _ 来替代</p>
+</li>
+<li><p>闭包, 跟 js 的闭包差不多</p>
+</li>
+<li><p>在 scala 调用 java 代码时可以使用隐式转换转变为 java 需要的类型</p>
+</li>
+</ol>
+<h2 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h2><p>看下边的例子</p>
+<pre><code>object Main {
+  def showInf(func :(String) =&gt; Unit,name: String): Unit ={
+    func(name)
+  }
+  def main(args: Array[String]): Unit = {
+    showInf(x =&gt; println(x),&quot;acyouzi&quot;)
+  }
+}</code></pre><p>上面的代码定义了一个高阶函数，这个函数接收一个函数，然后调用。运行上面代码在虚拟机启动参数中添加 -Djdk.internal.lambda.dumpProxyClasses 打印生成的内部类。然后反编译查看其实现原理。</p>
+<p>showInf 方法对应到 java 代码</p>
+<pre><code>public void showInf(Function1&lt;String, BoxedUnit&gt; func, String name) {
+  func.apply(name);
+}</code></pre><p>我们需要的函数参数被对应成了 trait ,这个 trait 与 java 的 Function interface 十分相似。而具体调用的地方被翻译成了如下几条指令</p>
+<pre><code>14: aload_0
+15: invokedynamic #73,  0             // InvokeDynamic #0:apply:()Lscala/Function1;
+20: ldc           #75                 // String acyouzi
+22: invokevirtual #77                 // Method showInf:(Lscala/Function1;Ljava/lang/String;)V</code></pre><p>注意 invokedynamic 指令，这条指令是在 java7 中新加入的,而且 java8 的 lambda 表达式调用就是使用这条命令实现的。所以 scala 的函数跟 java lambda 表达式实现上应该很相似。</p>
+<p>invokedynamic 会根据方法签名去 BootstrapMethods 中拿到方法的一个代理对象的实例。而这个代理对象是通过 LambdaMetafactory.altMetafactory() 方法生成的。这个方法最终会调用  InnerClassLambdaMetafactory 的 spinInnerClass 方法使用 asm 库提供的方法拼装一个实现了对应接口的代理类，代理类内容如下：</p>
+<pre><code>final class Main$$$Lambda$3 implements Function1, Serializable {
+  private Main$$$Lambda$3() {
+  }
+  @Hidden
+  public Object apply(Object var1) {
+    return $anonfun$main$1$adapted((String)var1);
+  }
+}</code></pre><p>在这个代理类中会调用一个静态的适配器方法，然后返回一个 BoxedUnit.UNIT</p>
+<pre><code>com/acyouzi/scala/Main$.$anonfun$main$1$adapted((String)var1)</code></pre><p>在这个方法中会调用真正的业务逻辑实现方法</p>
+<pre><code>com/acyouzi/scala/Main$.$anonfun$main$1:(Ljava/lang/String;)V</code></pre><p>这就是 scala 函数的调用流程。</p>
+<p>这里还有一个问题，showInf 接受的函数被对应到了 Function1 接口，那么如果一个方法接受的函数对应不到某个接口该怎么办呢？可以看一下 scala 包下的相关 trait ,从 0 一直到 22 也就是最多可以对应到一个接受 22 个参数的函数。至于再多了什么情况我我懒得试了。</p>
+<p>在 scala 包下边还有 Tuple 类 22个，从1 到 22，也就是说 tuple 里边应该最多只有 22个元素，同时每个 tuple 对应一个 Product 所以也就有 1 到22 个 Product</p>
+<h2 id="下划线使用"><a href="#下划线使用" class="headerlink" title="下划线使用"></a>下划线使用</h2><p>下划线跟在一个方法后面可以把方法转换为函数。</p>
+<pre><code>val func = myfunc _</code></pre><p>下划线在 lambda 表达式类型自动推导中可以简化书写，就是一些语法糖，没什么好注意的，会用就行了。</p>
+<pre><code>val map = Map(&quot;e&quot;-&gt;1,&quot;a&quot;-&gt;1,&quot;d&quot;-&gt;1,&quot;c&quot;-&gt;1,&quot;b&quot;-&gt;1)
+map.map(_._1).foreach(println(_));</code></pre><h2 id="闭包"><a href="#闭包" class="headerlink" title="闭包"></a>闭包</h2><p>函数在变量不处于其有效作用域时，还能够对变量进行访问，即为闭包。示例如下</p>
+<pre><code>object Main {
+  def test(): (String) =&gt; Unit ={
+    var say = &quot;Hi!&quot;
+    return (name:String) =&gt; println(s&quot;$say $name&quot;)
+  }
+  def main(args: Array[String]): Unit = {
+    var hello = test()
+    hello(&quot;acyouzi&quot;)
+  }
+}</code></pre><p>闭包能够访问到超出作用域的变量，在 java 中是因为生成的代理类的实例中持有相关变量的引用。</p>
+<p>实际上闭包被翻译成了一个对象，这个对象继承自 AbstractFunction，类名中带有 $anonfun$，引用的外部变量在构造函数中传入，具体业务逻辑放到 apply 方法中。</p>
+<pre><code>public final class Main$$anonfun$test$1 extends AbstractFunction1&lt;String, BoxedUnit&gt; implements Serializable {
+    public static final long serialVersionUID = 0L;
+    private final ObjectRef say$1;
+
+    public final void apply(final String name) {
+        Predef$.MODULE$.println((Object)new StringContext((Seq)Predef$.MODULE$.wrapRefArray((Object[])(String[])new String[] { &quot;&quot;, &quot; &quot;, &quot;&quot; })).s((Seq)Predef$.MODULE$.genericWrapArray((Object)new Object[] { (String)this.say$1.elem, name })));
+    }
+
+    public final /* bridge */ Object apply(final Object v1) {
+        this.apply((String)v1);
+        return BoxedUnit.UNIT;
+    }
+
+    public Main$$anonfun$test$1(final ObjectRef say$1) {
+        this.say$1 = say$1;
+        super();
+    }
+}</code></pre><p>而对方法的调用变成了如下的样子，注意 say 变量的类型变为了 ObjectRef 类型。</p>
+<pre><code>public Function1&lt;String, BoxedUnit&gt; test() {
+    final ObjectRef say = ObjectRef.create((Object)&quot;Hi!&quot;);
+    return (Function1&lt;String, BoxedUnit&gt;)new Main$$anonfun$test.Main$$anonfun$test$1(say);
+}
+
+public void main(final String[] args) {
+    final Function1 hello = this.test();
+    hello.apply((Object)&quot;acyouzi&quot;);
+}</code></pre><h2 id="Currying函数"><a href="#Currying函数" class="headerlink" title="Currying函数"></a>Currying函数</h2><p>科里化是一种将具备两个参数的函数 f 转化为使用一个参数的函数 g , 并且这个函数的返回值也是一个函数，他会作为一个新函数参数。</p>
+<pre><code>f(x,y) = (g(x))(y)</code></pre><p>科里化感觉像是闭包的一种特例，我也不太清楚这种理解对不对。实例如下</p>
+<pre><code>object Main {
+  def add(a: Int): (Int) =&gt; Int ={
+    return (b: Int) =&gt; a + b
+  }
+  def main(args: Array[String]): Unit = {
+    println(add(10)(15))
+    var curry = add(10)
+    println(curry(20))
+  }
+}</code></pre><p>scala 支持简写定义科里化函数，语法如下</p>
+<pre><code>def xxx(x :Int)(y :Int) = x * y</code></pre><h2 id="控制抽象"><a href="#控制抽象" class="headerlink" title="控制抽象"></a>控制抽象</h2><p>把一系列语句归组成不带参数也没有返回值的函数</p>
+<pre><code>def runInThread(block : =&gt; Unit): Unit ={
+  new Thread(new Runnable {
+    override def run(){
+      block
+    }
+  }).start()
+}
+def main(args: Array[String]): Unit = {
+  println(Thread.currentThread().getId)
+  runInThread {
+    println(Thread.currentThread().getId)
+  }
+}</code></pre><p>上面的方法采用换名调用方式声明参数( 换名调用：在参数声明和调用该参数的地方略去 () 但是保留 =&gt; .</p>
+<p>这样调用的代码就能写成 xxx { .. } 的形式。这样用起来就像是我们自己定义了一个关键字在使用。</p>
+<h2 id="控制抽象配合闭包"><a href="#控制抽象配合闭包" class="headerlink" title="控制抽象配合闭包"></a>控制抽象配合闭包</h2><pre><code>object Main {
+  def mywhile (condition: =&gt; Boolean)(block: =&gt; Unit){
+    if ( condition ){
+      block
+      mywhile(condition)(block)
+    }
+  }
+  def main(args: Array[String]): Unit = {
+    var i = 10
+    mywhile( i &gt; 0  ){
+      println(i)
+      i = i - 1
+    }
+  }
+}</code></pre><p>上面 def mywhile (condition: =&gt; Boolean)(block: =&gt; Unit) 采用的是科里化的简写形式。如果不采用简写形式写出来的函数会让人崩溃的:</p>
+<pre><code>object Main {
+  def mywhile (condition: =&gt; Boolean): ( ()=&gt; Unit) =&gt; Unit = (block : ()=&gt; Unit) =&gt; {
+    if(condition){
+      block()
+      mywhile(condition)(block)
+    }
+  }
+  def main(args: Array[String]): Unit = {
+    var i = 10
+    mywhile( i &gt; 0  )(()=&gt;{
+        println(i)
+        i = i - 1
+    })
+  }
+}</code></pre><p>上面是非简写形式，可以看到 mywhile 接受一个函数 ()=&gt; Boolean, 返回一个接受函数的函数 ( ()=&gt; Unit) =&gt; Unit， 在这个返回的接受函数参数的函数中实现了具体的业务逻辑。</p>
+<h2 id="常用高阶函数"><a href="#常用高阶函数" class="headerlink" title="常用高阶函数"></a>常用高阶函数</h2><ol>
+<li><p>map</p>
+<pre><code>(1 to 9).map(&quot;*&quot; * _).foreach(println _)</code></pre></li>
+<li><p>foreach</p>
+<pre><code>(1 to 9).map(&quot;*&quot; * _).foreach(println _)</code></pre></li>
+<li><p>filter 过滤掉不满足条件的</p>
+<pre><code>(1 to 9).filter(_ %2 == 0).foreach(println(_)) </code></pre></li>
+<li><p>zip 拉链操作</p>
+<pre><code>(1 to 9).zip((1 to 9)).foreach(print(_))
+// 输出
+(1,1)(2,2)(3,3)(4,4)(5,5)(6,6)(7,7)(8,8)(9,9)</code></pre></li>
+<li><p>partition 根据条件，true 一组 false 一组</p>
+<pre><code>val (x,y) = (1 to 9).partition(_%2 ==0)
+println(x)
+println(y)
+// 输出
+Vector(2, 4, 6, 8)
+Vector(1, 3, 5, 7, 9)</code></pre></li>
+<li><p>find 查找集合中第一个满足条件的元素，返回 option 类型，也就是可能为空</p>
+<pre><code>(1 to 9).find(_ &gt;5).foreach(println(_))</code></pre></li>
+<li><p>drop 删除前 n 个元素，类似还有 dropRight</p>
+<pre><code>(1 to 9).drop(3).foreach(println(_))</code></pre></li>
+<li><p>dropWhile 将删除元素直到找到第一个匹配谓词函数的元素</p>
+<pre><code>(1 to 9).dropWhile(_ % 2 != 0 ).foreach(print(_))
+// 输出
+23456789</code></pre></li>
+<li><p>foldLeft &amp;&amp; flod 折叠</p>
+<pre><code>(1 to 9).foldLeft(0){(m: Int, n: Int) =&gt; println(&quot;m: &quot; + m + &quot; n: &quot; + n); m + n}
+// 输出
+m: 0 n: 1
+m: 1 n: 2
+m: 3 n: 3
+m: 6 n: 4
+m: 10 n: 5
+m: 15 n: 6
+m: 21 n: 7
+m: 28 n: 8
+m: 36 n: 9</code></pre></li>
+<li><p>foldRight 右折叠</p>
+<pre><code>(1 to 9).foldRight(0){(m: Int, n: Int) =&gt; println(&quot;m: &quot; + m + &quot; n: &quot; + n); m + n}
+// 输出
+m: 9 n: 0
+m: 8 n: 9
+m: 7 n: 17
+m: 6 n: 24
+m: 5 n: 30
+m: 4 n: 35
+m: 3 n: 39
+m: 2 n: 42
+m: 1 n: 44</code></pre></li>
+<li><p>flatten 扁平化</p>
+<pre><code>List(List(1, 2), List(3, 4)).flatten.foreach(println(_))</code></pre></li>
+<li><p>flatMap 先 map 然后把结果扁平化</p>
+<pre><code>List(&quot;this is a test sentence&quot;,&quot;this is another sentence&quot;).flatMap(_.split(&quot; &quot;)).foreach(println(_))</code></pre></li>
+<li><p>sortWith</p>
+<pre><code>(0 to 9).sortWith(_&gt;_).foreach(println(_))</code></pre></li>
+<li><p>groupBy</p>
+<pre><code>(0 to 9).groupBy( _ %3 ).foreach(println(_))</code></pre></li>
+<li><p>reduce &amp;&amp; reduceLeft &amp;&amp; reduceRight &amp;&amp; reduceOption</p>
+<pre><code>var res = (1 to 9).reduce(_ + _)
+println(res)</code></pre></li>
+</ol>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/scala/">scala</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/02/27/spark-core-00/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Spark源码-Core-00-Master启动流程</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/02/20/scala-05/">
+        <span class="next-text nav-default">scala 学习 05 trait</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Condition 的使用与原理">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/21/java-parallel-condition/">
+
+
+<meta name="description" content="Condition 与重入锁相关联，其关系类似于 synchronized 与 wait notify 之间的关系。 Condition 的方法 public final void await() 使当前线程等待同时释放锁  public final long awaitNanos(long nanosTimeout) 有限时间的等待 public final boolean awaitUntil">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Condition 的使用与原理">
+<meta property="og:url" content="http://acyouzi.com/2016/11/21/java-parallel-condition/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="Condition 与重入锁相关联，其关系类似于 synchronized 与 wait notify 之间的关系。 Condition 的方法 public final void await() 使当前线程等待同时释放锁  public final long awaitNanos(long nanosTimeout) 有限时间的等待 public final boolean awaitUntil">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:00:37.929Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Condition 的使用与原理">
+<meta name="twitter:description" content="Condition 与重入锁相关联，其关系类似于 synchronized 与 wait notify 之间的关系。 Condition 的方法 public final void await() 使当前线程等待同时释放锁  public final long awaitNanos(long nanosTimeout) 有限时间的等待 public final boolean awaitUntil">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Condition 的使用与原理 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Condition 的使用与原理
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 21 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <p>Condition 与重入锁相关联，其关系类似于 synchronized 与 wait notify 之间的关系。</p>
+<h3 id="Condition-的方法"><a href="#Condition-的方法" class="headerlink" title="Condition 的方法"></a>Condition 的方法</h3><ul>
+<li>public final void await() 使当前线程等待同时释放锁 </li>
+<li>public final long awaitNanos(long nanosTimeout) 有限时间的等待</li>
+<li>public final boolean awaitUntil(Date deadline) 等待，直到某个时间之前</li>
+<li>public final boolean await(long time, TimeUnit unit) 有限时间等待</li>
+<li>public final void awaitUninterruptibly() 等待，并且不响应中断</li>
+<li>public final void signal()</li>
+<li>public final void signalAll()</li>
+</ul>
+<h3 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h3><pre><code>public static ReentrantLock lock = new ReentrantLock();
+public static Condition condition = lock.newCondition();
+public static Runnable run = () -&gt; {
+    try {
+        lock.lock();
+        System.out.println(Thread.currentThread().getName());
+        condition.await();
+        System.out.println(Thread.currentThread().getName());
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }finally {
+        lock.unlock();
+    }
+};
+public static void main(String[] args) throws InterruptedException {
+    Thread t = new Thread(run);
+    t.start();
+    Thread.sleep(8000);
+    lock.lock();
+    condition.signal();
+    lock.unlock();
+    t.join();
+}</code></pre><p>类似于 wait/notify ，condition.await() condition.notify() 的调用必须在lock.lock()和lock.unlock() 之间。</p>
+<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><p>Condition 由 AbstractQueuedSynchronizer 的内部类 ConditionObject 实现。</p>
+<p>获取 ConditionObject 需要调用 ReentrantLock 实现的 newCondition() 方法：</p>
+<pre><code>final ConditionObject newCondition() {
+    return new ConditionObject();
+}</code></pre><h4 id="await"><a href="#await" class="headerlink" title="await"></a>await</h4><ol>
+<li><p>在 await 方法中，首先调用 addConditionWaiter 清理 condition queue 中不是CONDITION的状态，然后把节点加入到 condition queue 尾部。</p>
+<pre><code>public final void await() throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    Node node = addConditionWaiter();
+    int savedState = fullyRelease(node);
+    int interruptMode = 0;
+    while (!isOnSyncQueue(node)) {
+        LockSupport.park(this);
+        if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
+            break;
+    }
+    if (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)
+        interruptMode = REINTERRUPT;
+    if (node.nextWaiter != null) // clean up if cancelled
+        unlinkCancelledWaiters();
+    if (interruptMode != 0)
+        reportInterruptAfterWait(interruptMode);
+}</code></pre></li>
+<li><p>然后在 fullyRelease 方法中会尝试去释放线程持有的锁 , fullyRelease 方法中调用 release 函数，在 release 方法中调用 tryRelease ,重入锁在 tryRelease 中判断释放锁的线程是不是持有锁的线程，如果不是抛出 IllegalMonitorStateException 异常。</p>
+<pre><code>final int fullyRelease(Node node) {
+    boolean failed = true;
+    try {
+        int savedState = getState();
+        if (release(savedState)) {
+            failed = false;
+            return savedState;
+        } else {
+            throw new IllegalMonitorStateException();
+        }
+    } finally {
+        if (failed)
+            node.waitStatus = Node.CANCELLED;
+    }
+}</code></pre></li>
+<li><p>在 while 循环中，调用 isOnSyncQueue 判断当前节点在不在 sync queue 中等待再次获取锁，如果不在 sync queue 并且没有发生中断事件，会一直循环下去。在循环中会挂起线程，挂起结束后调用 checkInterruptWhileWaiting 函数，这个函数内部会判断如果发生过中断会调用 transferAfterCancelledWait 函数。</p>
+<pre><code>final boolean transferAfterCancelledWait(Node node) {
+    if (compareAndSetWaitStatus(node, Node.CONDITION, 0)) {
+        enq(node);
+        return true;
+    }
+    while (!isOnSyncQueue(node))
+        Thread.yield();
+    return false;
+}</code></pre><p> transferAfterCancelledWait 方法中会去尝试修改节点的状态，如果失败会一直等待(Thread.yield())，直到这个节点被加入到 sync queue 中才会返回继续执行。 </p>
+</li>
+<li><p>当从 while 循环中退出后会参与到锁竞争中，最后处理中断信息。</p>
+</li>
+</ol>
+<h4 id="signal"><a href="#signal" class="headerlink" title="signal"></a>signal</h4><p>从下面的源码中可以看到下面的 signal 过程并没有去释放锁，主要操作仅仅是把等待的线程从 condition queue 换到 sync queue 中。</p>
+<ol>
+<li><p>首先判断释放锁的线程有没有持有锁，如果没有持有锁，抛出异常。</p>
+<pre><code>public final void signal() {
+    if (!isHeldExclusively())
+        throw new IllegalMonitorStateException();
+    Node first = firstWaiter;
+    if (first != null)
+        doSignal(first);
+}</code></pre></li>
+<li><p>然后调用 doSignal 最终会调到 transferForSignal, 在这个方法中会把要唤醒的节点加入到 sync queue 中, unpark 对应线程。</p>
+<pre><code>final boolean transferForSignal(Node node) {
+    if (!compareAndSetWaitStatus(node, Node.CONDITION, 0))
+        return false;
+    Node p = enq(node);
+    int ws = p.waitStatus;
+    //状态为cancel或者waitStatus修改失败则唤醒。
+    if (ws &gt; 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))
+        LockSupport.unpark(node.thread);
+    return true;
+}</code></pre><p> 按照常理来讲这个 if (ws &gt; 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL)) 判断应该很少为真才对，唤醒应该是等到 unlock 的时候再做吧。</p>
+</li>
+</ol>
+<h4 id="awaitUninterruptibly"><a href="#awaitUninterruptibly" class="headerlink" title="awaitUninterruptibly"></a>awaitUninterruptibly</h4><p>这个方法主要的不同是在 while 循环中并不会因为中断问题而跳槽循环，而是直到 isOnSyncQueue 这个条件满足才退出参与锁竞争、响应中断。</p>
+<pre><code>while (!isOnSyncQueue(node)) {
+    LockSupport.park(this);
+    if (Thread.interrupted())
+        interrupted = true;
+}</code></pre><h4 id="awaitNanos"><a href="#awaitNanos" class="headerlink" title="awaitNanos"></a>awaitNanos</h4><p>这个方法与 await 的区别是挂起使用的是 LockSupport.parkNanos(this, nanosTimeout) 方法。</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/22/java-parallel-semaphore/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">信号量的原理及应用</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/21/java-parallel-abstractqueuedsynchronizer/">
+        <span class="next-text nav-default">AbstractQueuedSynchronizer 的共享锁独占锁实现</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

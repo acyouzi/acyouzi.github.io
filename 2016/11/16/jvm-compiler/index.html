@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="jvm编译器">
+
+
+
+
+  <meta name="keywords" content="jvm,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/16/jvm-compiler/">
+
+
+<meta name="description" content="早期优化对法糖的处理 泛型擦除 public static void main(String[] args) {     Map&amp;lt;String,String&amp;gt; map = new HashMap&amp;lt;String,String&amp;gt;();     map.put(&amp;quot;hello&amp;quot;,&amp;quot;你好&amp;quot;);     System.out.println(ma">
+<meta name="keywords" content="jvm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="jvm编译器">
+<meta property="og:url" content="http://acyouzi.com/2016/11/16/jvm-compiler/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="早期优化对法糖的处理 泛型擦除 public static void main(String[] args) {     Map&amp;lt;String,String&amp;gt; map = new HashMap&amp;lt;String,String&amp;gt;();     map.put(&amp;quot;hello&amp;quot;,&amp;quot;你好&amp;quot;);     System.out.println(ma">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:58:59.779Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="jvm编译器">
+<meta name="twitter:description" content="早期优化对法糖的处理 泛型擦除 public static void main(String[] args) {     Map&amp;lt;String,String&amp;gt; map = new HashMap&amp;lt;String,String&amp;gt;();     map.put(&amp;quot;hello&amp;quot;,&amp;quot;你好&amp;quot;);     System.out.println(ma">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> jvm编译器 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          jvm编译器
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 16 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="早期优化"><a href="#早期优化" class="headerlink" title="早期优化"></a>早期优化</h3><p>对法糖的处理</p>
+<p>泛型擦除</p>
+<pre><code>public static void main(String[] args) {
+    Map&lt;String,String&gt; map = new HashMap&lt;String,String&gt;();
+    map.put(&quot;hello&quot;,&quot;你好&quot;);
+    System.out.println(map.get(&quot;hello&quot;));
+}</code></pre><p>上面的代反编译后变为如下形式</p>
+<pre><code>public static void main(String[] args) {
+    HashMap map = new HashMap();
+    map.put(&quot;hello&quot;, &quot;你好&quot;);
+    System.out.println((String)map.get(&quot;hello&quot;));
+}</code></pre><p>泛型被移除了，也就是不管把什么作为泛型参数的类在jvm中都被当做同一个类。</p>
+<p>泛型重载：因为泛型擦除所以如下方法在编译时会被判定为重复的。</p>
+<pre><code>public static void method(List&lt;String&gt; list){
+    System.out.println(&quot;String list&quot;);
+}
+public static void method(List&lt;Integer&gt; list){
+    System.out.println(&quot;Integer list&quot;);
+}</code></pre><p>自动装箱拆箱，遍历循环</p>
+<pre><code>public static void main(String[] args) {
+    List&lt;Integer&gt; list = Arrays.asList(1,2,3,4);
+    for( int i : list){
+        System.out.println(i);
+    }
+}</code></pre><p>反编译后的代码变为</p>
+<pre><code>public static void main(String[] args) {
+    List list = Arrays.asList(new Integer[]{Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3), Integer.valueOf(4)});
+    Iterator var2 = list.iterator();
+    while(var2.hasNext()) {
+        int i = ((Integer)var2.next()).intValue();
+        System.out.println(i);
+    }
+}</code></pre><p>条件编译</p>
+<pre><code>public static void main(String[] args) {
+    if( true ){
+        System.out.println(&quot;true block&quot;);
+    }else {
+        System.out.println(&quot;false block&quot;);
+    }
+}
+
+// 编译为
+public static void main(String[] args) {
+    System.out.println(&quot;true block&quot;);
+}</code></pre><h3 id="运行期优化"><a href="#运行期优化" class="headerlink" title="运行期优化"></a>运行期优化</h3><p>部分虚拟机在开始运行时是通过解释器进行解释执行，当虚拟机发现某个方法或者代码块的运行特别频繁时就把这段代码当做热点代码，然后通过即时编译器编译为本地平台相关代码。</p>
+<p>即时编译器一般分为 Client Compiler 和 Server Compiler 简称C1,C2。c1 编译器只进行简单可靠的优化，c2 编译器会进行耗时较长的优化，甚至是一些激进的优化。我们可以通过 -client 或者 -server 参数去指定虚拟机运行在哪种模式下。</p>
+<p>编译器与解释器共同运行的模式称为混合模式，我们可以通过参数 -Xint 强制虚拟机运行在解释模式，也可以通过参数 -Xcomp 强制虚拟机运行在编译模式</p>
+<h3 id="热点代码"><a href="#热点代码" class="headerlink" title="热点代码"></a>热点代码</h3><p>多次被调用的方法<br>被多次执行的循环体</p>
+<p>热点探测当方法目前主要有：</p>
+<ol>
+<li>基于采样点的热点探测，周期性的检测各个线程的栈顶，如果发现某个方法经常出现在栈顶，那么这个方法就是热点方法。</li>
+<li>基于计数器的热点探测，虚拟机会为每个方法甚至是代码块建立计数器，统计方法的执行次数。</li>
+</ol>
+<p>HotSpot采用第二种方法，他为每个方法准备了两类计数器：方法调用计数器，回边计数器。方法调用计数器的默认阈值在Client模式下是 1500 次，在Server模式下是 10000 次，这个阈值可以通过 -XX:ComplieThreshold 设置。另外还存在一个热衰减度，当执行一定时间计数器还没达到阈值计数器值会减半，可以通过 -XX:ConterDecay 参数来关闭热衰减。另外可以使用 -XX:CounterHalfLifeTime参数设置半衰周期。回边计数器没有热衰减过程。</p>
+<p>使用 -XX:+PrintCompilation 参数来实时打印被编译为本地代码的方法名称。</p>
+<h3 id="编译优化技术"><a href="#编译优化技术" class="headerlink" title="编译优化技术"></a>编译优化技术</h3><h4 id="方法内联"><a href="#方法内联" class="headerlink" title="方法内联"></a>方法内联</h4><p>他是编译器最重要的优化手段之一，除了消除方法调用的成本之外，更重要的意义在于为其他优化手段建立良好的基础。对于非虚方法可以直接进行内联，对于虚方法编译期间可能根本没法确定应该使用哪个版本的方法。</p>
+<p>为了解决虚方法内联的问题，首先引进了一种称为类型继承分析的技术，如果遇到虚方法通过类型继承分析确定是否只有一个版本的方法。如果是那也进行内联，但是这种优化属于激进优化需要预留一个逃生门，称为守护内联。</p>
+<p>关于激进优化，除了内联，对于出现概率很小的隐式异常，使用概率很小的分支都可能被激进优化移除。</p>
+<h4 id="逃逸分析"><a href="#逃逸分析" class="headerlink" title="逃逸分析"></a>逃逸分析</h4><p>逃逸分析的基本行为就是分析对象动态作用域，如果一个变量在线程外被引用称为线程逃逸，如果一个变量在的作用域超出了方法范围称为方法逃逸。</p>
+<p>基于逃逸分析可以做一下优化：</p>
+<ol>
+<li>栈上分配，确定对象作用域不会超出方法范围可以把对象分配在栈上，这样可以随栈被回收。(Java没有实现这项优化)</li>
+<li>同步消除，对于没有线程逃逸的对象不用进行线程同步。</li>
+<li>标量替换，把一个java对象拆散，根据程序的方位情况将使用的成员变量恢复成原始类型 来访问就叫标量替换。如果逃逸分析证明一个对象不会被外部访问，并且这个对象可以被拆散那么程勋真正执行时就可能不会真正创建这个对象。</li>
+</ol>
+<p>-XX:+DoEscapeAnalysis 开启逃逸分析，-XX:+PrintEscapeAnalysis查看分析结果，-XX:+EliminateAllocations 开启标量替换，-XX:EliminateLocks 来开启同步消除，-XX:+PrintEliminateAllocation查看标量替换结果。</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/jvm/">jvm</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/16/java-day-to-day-0/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">java 杂记(0)</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/14/jvm-bytecode-engine/">
+        <span class="next-text nav-default">jvm 方法调用</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

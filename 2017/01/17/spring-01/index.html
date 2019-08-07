@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="spring 数据库集成以及缓存">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/01/17/spring-01/">
+
+
+<meta name="description" content="Spring JdbcSpring 提供的持久化相关的异常都是非捕获异常，可以不用捕获，这与其设计思想有关。spring 认为触发异常的很多问题是无法在 catch 中解决的，所以不应该强制开发人员去捕获异常。 首先添加几个依赖 compile group: &amp;apos;org.apache.commons&amp;apos;, name: &amp;apos;commons-dbcp2&amp;apos;, versi">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring 数据库集成以及缓存">
+<meta property="og:url" content="http://acyouzi.com/2017/01/17/spring-01/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="Spring JdbcSpring 提供的持久化相关的异常都是非捕获异常，可以不用捕获，这与其设计思想有关。spring 认为触发异常的很多问题是无法在 catch 中解决的，所以不应该强制开发人员去捕获异常。 首先添加几个依赖 compile group: &amp;apos;org.apache.commons&amp;apos;, name: &amp;apos;commons-dbcp2&amp;apos;, versi">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:56:08.891Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="spring 数据库集成以及缓存">
+<meta name="twitter:description" content="Spring JdbcSpring 提供的持久化相关的异常都是非捕获异常，可以不用捕获，这与其设计思想有关。spring 认为触发异常的很多问题是无法在 catch 中解决的，所以不应该强制开发人员去捕获异常。 首先添加几个依赖 compile group: &amp;apos;org.apache.commons&amp;apos;, name: &amp;apos;commons-dbcp2&amp;apos;, versi">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> spring 数据库集成以及缓存 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          spring 数据库集成以及缓存
+        
+      </h1>
+
+      <time class="post-time">
+          Jan 17 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="Spring-Jdbc"><a href="#Spring-Jdbc" class="headerlink" title="Spring Jdbc"></a>Spring Jdbc</h3><p>Spring 提供的持久化相关的异常都是非捕获异常，可以不用捕获，这与其设计思想有关。spring 认为触发异常的很多问题是无法在 catch 中解决的，所以不应该强制开发人员去捕获异常。</p>
+<p>首先添加几个依赖</p>
+<pre><code>compile group: &apos;org.apache.commons&apos;, name: &apos;commons-dbcp2&apos;, version: &apos;2.1.1&apos;
+compile group: &apos;org.springframework&apos;, name: &apos;spring-jdbc&apos;, version: &apos;4.3.5.RELEASE&apos;
+compile group: &apos;mysql&apos;, name: &apos;mysql-connector-java&apos;, version: &apos;6.0.5&apos;</code></pre><h4 id="DBCP-连接池配置"><a href="#DBCP-连接池配置" class="headerlink" title="DBCP 连接池配置"></a>DBCP 连接池配置</h4><ol>
+<li><p>创建配置文件 jdbc.properties 写入配置</p>
+<p> db.driver=com.mysql.cj.jdbc.Driver<br> db.jdbcurl=jdbc:mysql://192.168.192.132/spring_test?characterEncoding=utf8<br> db.username=root<br> db.password=</p>
+</li>
+<li><p>配置 Bean</p>
+<pre><code>@Configuration
+public class JdbcSpringConfig {
+    @Value(&quot;${db.driver}&quot;)
+    private String driver;
+    @Value(&quot;${db.jdbcurl}&quot;)
+    private String jdbcurl;
+    @Value(&quot;${db.username}&quot;)
+    private String username;
+    @Value(&quot;${db.password}&quot;)
+    private String password;
+    @Bean
+    public DataSource getDBCPDataSource(){
+        System.out.println(jdbcurl + username + password );
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setDriverClassName(driver);
+        dataSource.setUrl(jdbcurl);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+//        dataSource.setInitialSize(5);
+//        dataSource.setMinIdle(5);
+//        dataSource.setMaxIdle(10);
+//        dataSource.setMaxTotal(-1);
+        return dataSource;
+    }
+}</code></pre><p> 这里特别说明一下使用新版本 mysql 驱动容易出现的 serverTimezone 错误：<br> The server time zone value ‘ÖÐ¹ú±ê×¼Ê±¼ä’ is unrecognized or represents more than one time zone. You must configure either the server or JDBC driver (via the serverTimezone configuration property) to use a more specifc time zone value if you want to utilize time zone support.</p>
+<p> 这个错误是因为 mysql 在启动时会读取系统时区，但是不知道为啥在 windows 下边读取到的是乱码</p>
+<pre><code>show variables like &quot;%time_zone%&quot;;
++------------------+-------------------+
+| Variable_name    | Value             |
++------------------+-------------------+
+| system_time_zone | ???ú±ê×??±?? |
+| time_zone        | SYSTEM            |
++------------------+-------------------+
+2 rows in set (0.00 sec)</code></pre><p> 解决方法有：</p>
+<p> 可以在 db.jdbcurl 中添加 serverTimezone=UTC</p>
+<pre><code>db.jdbcurl=jdbc:mysql://192.168.192.132/spring_test?serverTimezone=UTC&amp;characterEncoding=utf8</code></pre><p> 也可以想办法在服务器端修改, 当然最好还是找个 linux mysql 服务器, 把服务器时区改成 CST</p>
+<pre><code>show variables like &quot;%time_zone%&quot;;
++------------------+--------+
+| Variable_name    | Value  |
++------------------+--------+
+| system_time_zone | CST    |
+| time_zone        | SYSTEM |
++------------------+--------+
+2 rows in set (0.00 sec)</code></pre></li>
+</ol>
+<h4 id="使用-Spring-数据源连接"><a href="#使用-Spring-数据源连接" class="headerlink" title="使用 Spring 数据源连接"></a>使用 Spring 数据源连接</h4><p>spring-jdbc 包中提供了三个数据源</p>
+<pre><code>DriverManagerDataSource 每个连接请求都返回一个新的连接
+SimpleDriverDataSource 类似 DriverManagerDataSource
+SingleConnectionDataSource 每个请求返回同一个连接</code></pre><p>可以使用使用如下代码配置<br>    @Bean<br>    public DataSource getSpringDataSources(){<br>        DriverManagerDataSource ds = new DriverManagerDataSource();<br>        ds.setDriverClassName(driver);<br>        ds.setUrl(jdbcurl);<br>        ds.setUsername(username);<br>        ds.setPassword(password);<br>        return ds;<br>    }</p>
+<h4 id="多数据源切换"><a href="#多数据源切换" class="headerlink" title="多数据源切换"></a>多数据源切换</h4><p>可以使用 @Profile 注解来实现在 开发 测试 线上 不同环境的数据源自动切换</p>
+<h3 id="JdbcTemplate"><a href="#JdbcTemplate" class="headerlink" title="JdbcTemplate"></a>JdbcTemplate</h3><p>因为在数据库访问中存在大量重复的模板代码，这些代码是对工作能力的浪费。Spring 对这些代码进行了比较好的封装，Spring 提供了两个模板类供我们选择。</p>
+<pre><code>JdbcTemplate 基本模板
+NamedParameterJdbcTemplate 执行查询时可以将值以命名参数的形式绑定到 SQL 中，而不是简单的使用索引参数。</code></pre><ol>
+<li><p>配置 Bean</p>
+<pre><code>@Bean
+public JdbcTemplate jdbcTemplate(DataSource dataSource){
+    return new JdbcTemplate(dataSource);
+}</code></pre></li>
+<li><p>编写测试类</p>
+<pre><code>@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {BaseConfiguration.class})
+public class SpringTest {
+    @Autowired
+    private JdbcOperations operations;
+    @Test
+    public void JdbcTest() throws Exception {
+        // insert
+        int res = operations.update(&quot;INSERT INTO `test`(`name`, `passwd`) VALUES (?,?)&quot;, &quot;test&quot;, &quot;test&quot;);
+        System.out.println(res);
+        // select
+        List&lt;User&gt; users = operations.query(&quot;select * from test where id=?&quot;, (rs, rowNum) -&gt; {
+            return new User(rs.getInt(&quot;id&quot;), rs.getString(&quot;name&quot;), rs.getString(&quot;passwd&quot;));
+        }, 1);
+        System.out.println(users);
+    }
+}</code></pre></li>
+<li><p>命名参数使用</p>
+<pre><code>Map params = new HashMap();
+params.put(&quot;name&quot;,&quot;xxxx&quot;);
+params.put(&quot;passwd&quot;,&quot;xxxx&quot;);
+namedTemplate.update(&quot;INSERT INTO `test`(`name`, `passwd`) VALUES (:name,:passwd)&quot;,params);</code></pre></li>
+<li><p>JPA<br> spring 还能与 JPA 模块便捷集成，提供了应用程序管理类型和容器管理类型两种配置方式，一般都会配置成容器管理类型。至于具体配置这里就不做过多介绍了，配置中需要提供一个 JPAVendorAdapter,Spring 提供了 EclipseLinkJPAVendorAdapter,HibernateJPAVendorAdapter,OpenJPAVendorAdapter 等多个 JPA 厂商适配器</p>
+</li>
+</ol>
+<h3 id="Spring-redis"><a href="#Spring-redis" class="headerlink" title="Spring redis"></a>Spring redis</h3><p>Spring 还提供了跟各种非关系型数据简单集成的工具，能够集成 MongoDB,Neo4j,Redis 等非关系型数据库。同时提供了一系列的注解以及模板方法来简化 dao 层的开发。下面简答介绍 Redis 相关的内容.</p>
+<p>spring 为四种 redis 客户端实现了连接工厂,分别是 </p>
+<pre><code>JedisConnectionFactory
+JredisConnection
+LettuceConnectionFactory
+SrpConnectionFactory</code></pre><p>spring 提供了 RedisTemplate StringRedisTemplate 连个模板类，对重复步骤进行了封装。在 RedisTemplate 中可以如上面代码显示的一样设置键和值的序列化方法</p>
+<p>可用的序列化方法有 </p>
+<pre><code>GenericToStringSerializer 
+Jackson2JsonRedisSerializer 
+JdkSerializationRedisSerializer 
+OxmSerializer 
+StringRedisSerializer </code></pre><ol>
+<li><p>注册 Bean</p>
+<pre><code>@Configuration
+public class RedisConfiguration {
+    @Bean
+    public RedisConnectionFactory getRedisConnectionFactory(){
+        JedisConnectionFactory factory = new JedisConnectionFactory();
+        factory.setHostName(&quot;192.168.192.128&quot;);
+        factory.setPort(6379);
+        return  factory;
+    }
+    @Bean
+    public RedisTemplate&lt;String,String&gt; getRedisTemplate(RedisConnectionFactory factory){
+        RedisTemplate&lt;String,String&gt; template = new RedisTemplate&lt;String, String&gt;();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new StringRedisSerializer());
+        return template;
+    }
+}</code></pre></li>
+<li><p>编写测试方法</p>
+<pre><code>@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {BaseConfiguration.class})
+public class SpringTest {
+    @Autowired
+    private RedisTemplate&lt;String,String&gt; redisTemplate;
+    @Test
+    public void redisTest() throws Exception {
+        // 简单值操作
+        redisTemplate.opsForValue().set(&quot;test&quot;,&quot;test&quot;);
+        System.out.println(redisTemplate.opsForValue().get(&quot;test&quot;));
+
+        // list
+        redisTemplate.opsForList().leftPush(&quot;list:test&quot;,&quot;acyouzi&quot;);
+        System.out.println(redisTemplate.opsForList().rightPop(&quot;list:test&quot;));
+
+        // set
+        redisTemplate.opsForSet().add(&quot;set:test&quot;,&quot;aaa&quot;,&quot;bbb&quot;,&quot;ccc&quot;);
+        redisTemplate.opsForSet().remove(&quot;set:test&quot;,&quot;aaa&quot;);
+        System.out.println(redisTemplate.opsForSet().size(&quot;set:test&quot;));
+    }
+}</code></pre></li>
+</ol>
+<h3 id="缓存"><a href="#缓存" class="headerlink" title="缓存"></a>缓存</h3><p>Spring 对缓存功能提供了声明式的支持，并内置了几个缓存管理器</p>
+<pre><code>SimpleCacheManager 
+NoOpCacheManager 
+CompositeCacheManager // 组合使用多个缓存
+ConcurrentMapCacheManager // 线程安全的
+JCacheCacheManager 
+GuavaCacheManager </code></pre><p>Spring Data Redis 中还提供了一个 </p>
+<pre><code>RedisCacheManager</code></pre><p> 下面是一个配置 Redis 作为 CacheManager 的示例。</p>
+<pre><code>@Configuration
+@EnableCaching
+public class CacheConfig {
+    @Bean
+    public CacheManager cacheManager(RedisTemplate&lt;String ,String&gt; redisTemplate){
+        return new RedisCacheManager(redisTemplate);
+    }
+}</code></pre><p>首先是要 @EnableCaching，然后把 CacheManager 注册为 Bean. RedisCacheManager 需要一个 RedisTemplate 就是我们前边介绍 redis 时注册的 redisTemplate  </p>
+<h4 id="缓存相关注解"><a href="#缓存相关注解" class="headerlink" title="缓存相关注解"></a>缓存相关注解</h4><ol>
+<li><p>@Cacheable<br> 方法调用之前首先在缓存中检测方法的返回值，如果能够找到，就返回缓存中的值。否则调用方法，并把方法返回值放到缓存中。一般需要反复调用的查询方法，而且值不经常改变，就可以添加该方法。</p>
+</li>
+<li><p>@CachePut<br> 方法调用前不检查缓存，方法始终会被调用，方法返回值会被放到缓存中。如果一个方法是去向数据库中添加或者修改某个值，而这个值又是在其他地方频繁查询的，那么这个方法上应该添加该注解</p>
+</li>
+<li><p>@CacheEvict<br> 在缓存中清除一个或多个条目。如果一个方法的任务是删除一个数据库中的值，而这个值刚好在缓存中也有保存，那么应该使用这个注解删除缓存中相关的值。</p>
+</li>
+</ol>
+<p>为了方便可以直接把注解加载需要缓存的方法的接口上.这样每个实现接口的方法都能应用缓存的配置，也可应放到类上，这样类的每个方法都会被缓存。</p>
+<p>@Cacheable 与 @CachePut 中有一些共有的参数可以用于对缓存做一些控制。</p>
+<pre><code>value 缓存名 string[]
+condition 条件 SpEL 表达式 如果值为 false 则不放入缓存
+unless 条件 SpEL 表达式 如果值为 true 则不放入缓存， 如 #result == null
+key 缓存的键 SpEL 表达式，默认好像是所有的传入参数</code></pre><p>@CacheEvict 的参数有</p>
+<pre><code>value 
+key 
+condition
+allEntries boolean 如果为 true 删除所有条目
+beforeInvocation boolean 如果为 true 在方法调用之前删除，默认为 false</code></pre><p>并且提供了多个用于定义缓存规则的 SpEL </p>
+<pre><code>#root.methodName 缓存方法的名字 
+#root.method 缓存方法
+#root.target 目标对象
+#root.targetClass 目标对象的类
+#root.args[0] 传递给缓存方法的参数，形式为数组
+#root.caches[0] 方法执行时所对应的缓存， 形式为数组
+#argument 任意方法参数名
+#result 方法调用的返回值</code></pre>
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/01/23/flume-note/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">flume 全接触</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/01/15/spring-00/">
+        <span class="next-text nav-default">spring 基本使用</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

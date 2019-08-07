@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="storm 初步">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/02/04/storm-start/">
+
+
+<meta name="description" content="介绍storm 是分布式的流式计算框架，用于数据的实时计算场景。具有低延时，可扩展，数据不丢失等特性。 几个概念 Topology  一个 Topology 类似一个 mapreduce ,表示处理的逻辑。Topology 如果不显示的杀死会一直运行，即使集群重启后任务仍然存在。  Spouts   获取数据源的组件，接受外部数据然后转换为 topology 内部数据。spouts 可以是可靠的，">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="storm 初步">
+<meta property="og:url" content="http://acyouzi.com/2017/02/04/storm-start/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="介绍storm 是分布式的流式计算框架，用于数据的实时计算场景。具有低延时，可扩展，数据不丢失等特性。 几个概念 Topology  一个 Topology 类似一个 mapreduce ,表示处理的逻辑。Topology 如果不显示的杀死会一直运行，即使集群重启后任务仍然存在。  Spouts   获取数据源的组件，接受外部数据然后转换为 topology 内部数据。spouts 可以是可靠的，">
+<meta property="og:locale" content="zh">
+<meta property="og:image" content="http://acyouzi.com/2017/02/04/storm-start/relationships-worker-processes-executors-tasks.png">
+<meta property="og:image" content="http://acyouzi.com/2017/02/04/storm-start/example-of-a-running-topology.png">
+<meta property="og:image" content="http://acyouzi.com/2017/02/04/storm-start/storm-internal-message-queues.png">
+<meta property="og:updated_time" content="2019-08-07T13:56:04.124Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="storm 初步">
+<meta name="twitter:description" content="介绍storm 是分布式的流式计算框架，用于数据的实时计算场景。具有低延时，可扩展，数据不丢失等特性。 几个概念 Topology  一个 Topology 类似一个 mapreduce ,表示处理的逻辑。Topology 如果不显示的杀死会一直运行，即使集群重启后任务仍然存在。  Spouts   获取数据源的组件，接受外部数据然后转换为 topology 内部数据。spouts 可以是可靠的，">
+<meta name="twitter:image" content="http://acyouzi.com/2017/02/04/storm-start/relationships-worker-processes-executors-tasks.png">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> storm 初步 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          storm 初步
+        
+      </h1>
+
+      <time class="post-time">
+          Feb 04 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>storm 是分布式的流式计算框架，用于数据的实时计算场景。具有低延时，可扩展，数据不丢失等特性。</p>
+<h3 id="几个概念"><a href="#几个概念" class="headerlink" title="几个概念"></a>几个概念</h3><ol>
+<li><p>Topology</p>
+<p> 一个 Topology 类似一个 mapreduce ,表示处理的逻辑。Topology 如果不显示的杀死会一直运行，即使集群重启后任务仍然存在。</p>
+</li>
+<li><p>Spouts </p>
+<p> 获取数据源的组件，接受外部数据然后转换为 topology 内部数据。spouts 可以是可靠的，缓存 tuple ，当消息处理失败时重新发送。也可以不缓存 tuple。</p>
+<p> spouts 的关键方法是 nextTuple() 方法，storm 会循环调用这个方法。<br> ack(),fail() 用于保证可靠。</p>
+</li>
+<li><p>Bolts </p>
+<p> 完成具体的处理逻辑，主要是 execute() 方法在起作用。</p>
+</li>
+<li><p>Stream groupings</p>
+<ul>
+<li>Shuffle grouping 随机分组</li>
+<li>Fields grouping 按字段分组,具有相同字段的保证分配到同一个bolt,但是不保证不同字段分配到不同 bolt</li>
+<li>Partial Key grouping 类似于 Fields grouping，但是有更好的并行度，能提高资源利用率</li>
+<li>All Grouping 所有的 bolt 接收同一个 tuple</li>
+<li>Global Grouping 所有的流指向 Bolt 的 Task ID 最小的 task</li>
+<li>None Grouping 等价于Shuffle grouping</li>
+<li>Direct Grouping 由Tupe的生产者来决定发送给下游的哪一个Bolt的Task</li>
+<li>Local or shuffle grouping 如果目标 bolt 有一个或多个 task 在同一个工作进程中，tuple 会随机发送给这些 task，否则其行为跟 shuffle grouping 一致</li>
+</ul>
+</li>
+<li><p>Tasks </p>
+<p> 每个 spout、bolt 对应多个 task ,每个 task 对应一个executor</p>
+</li>
+<li><p>Workers </p>
+<p> 每个 Worker 是一个 JVM 和他上面执行的所有 task，每个 JVM 会占用一个 slot</p>
+</li>
+</ol>
+<h3 id="worker-executors-and-tasks-之间的关系"><a href="#worker-executors-and-tasks-之间的关系" class="headerlink" title="worker, executors and tasks 之间的关系"></a>worker, executors and tasks 之间的关系</h3><p><img src="relationships-worker-processes-executors-tasks.png" alt="image"></p>
+<p>一个 worker 属于一个 topology，一个 worker 运行多个 executor</p>
+<p>一个 executor 是 worker 的一个线程，其中可能运行一个或多个 task，一个 executor 中的 task 都是同一个 bolt 或者 spout。</p>
+<p>task 执行实际的数据处理逻辑,默认 task 的数量等于 executor 也就是为每个 task 开启一个线程。</p>
+<p>如果 task 数量不等于 executor 会出现多个 task 运行在一个 executor 中也就是一个线程中的情况。所以我们在实现 spout/bolt 时最好不要使线程阻塞。</p>
+<h3 id="topology-例子"><a href="#topology-例子" class="headerlink" title="topology 例子"></a>topology 例子</h3><p>设置 topology 有2个 worker. blue-spout 并行度是2 ，green-bolt 有两个executor ,4个 task. yellow-bolt 有6 个 executor .</p>
+<pre><code>Config conf = new Config();
+conf.setNumWorkers(2); // use two worker processes
+
+topologyBuilder.setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2); // set parallelism hint to 2
+
+topologyBuilder.setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2)
+               .setNumTasks(4)
+               .shuffleGrouping(&quot;blue-spout&quot;);
+
+topologyBuilder.setBolt(&quot;yellow-bolt&quot;, new YellowBolt(), 6)
+               .shuffleGrouping(&quot;green-bolt&quot;);
+
+StormSubmitter.submitTopology(
+        &quot;mytopology&quot;,
+        conf,
+        topologyBuilder.createTopology()
+    );</code></pre><p><img src="example-of-a-running-topology.png" alt="image"></p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><ol>
+<li><p>配置 zookeeper 集群。配置 storm 环境变量</p>
+</li>
+<li><p>配置 storm-env.sh 中 JAVA_HOME</p>
+</li>
+<li><p>配置 conf/storm.yaml</p>
+<pre><code>storm.zookeeper.servers:
+    - &quot;acyouzi01&quot;
+# 指定 Master 节点
+nimbus.seeds: [&quot;acyouzi01&quot;, &quot;acyouzi02&quot;]
+# 指定一个 supervisor 最大允许多少个 slot
+supervisor.slots.ports:
+    - 6700
+    - 6701
+    - 6702
+    - 6703</code></pre></li>
+<li><p>启动</p>
+<pre><code># 启动 nimbus 
+storm nimbus
+# 启动 supervisor
+storm supervisor
+# 启动 ui, 监听在 8080 端口
+storm ui   ##http://{ui host}:8080.</code></pre></li>
+</ol>
+<h2 id="相关命令"><a href="#相关命令" class="headerlink" title="相关命令"></a>相关命令</h2><pre><code># 提交/杀死
+storm jar topology-jar-path class 
+storm kill topology-name [-w wait-time-secs]
+# 禁用/启用
+storm deactivate topology-name
+storm activate topology-name
+# 重新设置并行度
+storm rebalance topology-name [-w wait-time-secs] [-n new-num-workers] [-e component=parallelism]*
+
+# 在 superviser 上运行，启动 drpc 服务
+storm drpc
+# 在 superviser 上运行，杀死上边的所有 worker
+storm kill_workers
+
+storm list</code></pre><h2 id="简单使用-wordcount"><a href="#简单使用-wordcount" class="headerlink" title="简单使用(wordcount)"></a>简单使用(wordcount)</h2><pre><code>// spout 
+public class SimpleSpout extends BaseRichSpout {
+    private SpoutOutputCollector collector;
+    private String[] sentences = new String[]{
+            &quot;This is a test sentencs&quot;,
+            &quot;You gotta treat every day like a holiday&quot;,
+            &quot;and I know life is gonna suck some days&quot;,
+            &quot;That makes you feel so good when time are rough it is okay&quot;,
+            &quot;and I know life is gonna suck some days but I can not complain&quot;
+    };
+    private Random random;
+    @Override
+    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        this.collector = collector;
+        random = new Random();
+    }
+
+    @Override
+    public void nextTuple() {
+        collector.emit(new Values(sentences[random.nextInt(sentences.length)] ) );
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields(&quot;sentence&quot;));
+    }
+}
+
+// split
+public class SplitBlot extends BaseRichBolt {
+    private OutputCollector collector;
+    @Override
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        this.collector = collector;
+    }
+
+    @Override
+    public void execute(Tuple input) {
+        String sencence = input.getStringByField(&quot;sentence&quot;);
+        String[] words = sencence.split(&quot; &quot;);
+        for (String word : words){
+            word = word.trim();
+            word = word.toLowerCase();
+            if (!word.isEmpty()){
+                collector.emit(new Values(word));
+            }
+        }
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields(&quot;word&quot;));
+    }
+}
+
+// counter 
+public class CountBolt extends BaseRichBolt {
+    private Map&lt;String,Integer&gt; counters = new HashMap&lt;&gt;();
+    @Override
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+
+    }
+
+    @Override
+    public void execute(Tuple input) {
+        String word = input.getString(0);
+        if( counters.containsKey(word)){
+            counters.put(word,counters.get(word)+1 );
+        }else {
+            counters.put(word,1);
+        }
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+
+    }
+    @Override
+    public void cleanup() {
+        System.out.println(counters.toString());
+    }
+}
+
+// topology
+public class MyTopology {
+    public static void main(String[] args) throws InterruptedException {
+        Config config = new Config();
+        config.setNumWorkers(2);
+        config.setDebug(true);
+
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout(&quot;spout&quot;,new SimpleSpout(),4);
+        builder.setBolt(&quot;split&quot;,new SplitBlot(),2).shuffleGrouping(&quot;spout&quot;);
+        builder.setBolt(&quot;count&quot;,new CountBolt(),6).fieldsGrouping(&quot;split&quot;,new Fields(&quot;word&quot;));
+
+        LocalCluster cluster = new LocalCluster();
+        cluster.submitTopology(&quot;Test&quot;,config,builder.createTopology());
+        Thread.sleep(30000);
+
+        cluster.killTopology(&quot;Test&quot;);
+        cluster.shutdown();
+    }
+}</code></pre><h2 id="Storm-Worker-通信"><a href="#Storm-Worker-通信" class="headerlink" title="Storm Worker 通信"></a>Storm Worker 通信</h2><p>参考 <a href="http://www.michael-noll.com/blog/2013/06/21/understanding-storm-internal-message-buffers/" target="_blank" rel="noopener">http://www.michael-noll.com/blog/2013/06/21/understanding-storm-internal-message-buffers/</a></p>
+<p><img src="storm-internal-message-queues.png" alt="image"></p>
+<p>内部通信使用 Disruptor，外部通信基于 netty (0.9).</p>
+<p>每个 worker 有独立的 接受和发送线程。</p>
+<p>每个executor有自己的输入输出队列，Worker接收线程将收到的消息通过task编号传递给对应的executor(一个或多个)的输入队列。</p>
+<h2 id="ACK-机制"><a href="#ACK-机制" class="headerlink" title="ACK 机制"></a>ACK 机制</h2><p>参考 <a href="http://blog.csdn.net/zhangzhebjut/article/details/38467145" target="_blank" rel="noopener">http://blog.csdn.net/zhangzhebjut/article/details/38467145</a></p>
+<p>storm 的 ack 机制是通过一个唯一的 spout-tuple-id 来跟踪一颗 topology 树，有键值对 &lt;spout-tuple-id, ack-val&gt; , 每次 spout/bolt 发送消息或调用ack(),fail()方法时发送一个 ack-val 到 acker(task),这个值与旧的 ack-val 做异或操作。当在 Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS 设定的时间内，如果最终 ack-val 为 0 说明消息被完全处理，否则说明消息处理失败。</p>
+<p>acker 数量可以通过 Config.TOPOLOGY_ACKERS 设置，默认值是 1.</p>
+<h3 id="关闭-ack-机制的方法"><a href="#关闭-ack-机制的方法" class="headerlink" title="关闭 ack 机制的方法"></a>关闭 ack 机制的方法</h3><p>第一是把Config.TOPOLOGY_ACKERS 设置成 0. 在这种情况下， storm会在spout发射一个tuple之后马上调用spout的ack方法。也就是说这个tuple树不会被跟踪。</p>
+<p>第二个方法是在tuple层面去掉可靠性。 你可以在发射tuple的时候不指定messageid来达到不跟踪某个特定的spout tuple的目的。</p>
+<p>最后一个方法是如果你对于一个tuple树里面的某一部分到底成不成功不是很关心，那么可以在发射这些tuple的时候unanchor它们。 这样这些tuple就不在tuple树里面， 也就不会被跟踪了。</p>
+<h3 id="ack-示例"><a href="#ack-示例" class="headerlink" title="ack 示例"></a>ack 示例</h3><pre><code>// spout
+public class AckSpout implements IRichSpout {
+    private SpoutOutputCollector collector;
+    private String[] mess = new String[]{
+            &quot;test0&quot;,
+            &quot;test1&quot;,
+            &quot;test2&quot;,
+            &quot;test3&quot;,
+            &quot;test4&quot;,
+            &quot;test5&quot;
+    };
+    private Random random;
+    private Map&lt;String,Values&gt; buffer = new HashMap&lt;&gt;();
+    @Override
+    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        this.collector = collector;
+        random = new Random();
+    }
+
+    @Override
+    public void nextTuple() {
+        Values values = new Values(mess[random.nextInt(mess.length)]);
+        String messageId = UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;);
+        collector.emit(values,messageId);
+        buffer.put(messageId,values);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void ack(Object msgId) {
+        System.out.println(&quot;send success !!! -- &quot; + msgId);
+        buffer.remove(msgId);
+    }
+
+    @Override
+    public void fail(Object msgId) {
+        System.out.println(&quot;send fail !!! -- &quot; + msgId);
+        collector.emit(buffer.get(msgId),msgId);
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields(&quot;name&quot;));
+    }
+}
+
+// bolt
+public class AckBolt implements IRichBolt {
+    private  OutputCollector collector;
+    @Override
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        this.collector = collector;
+    }
+
+    @Override
+    public void execute(Tuple input) {
+        Object messageId = input.getMessageId();
+        String name = input.getStringByField(&quot;name&quot;);
+        if (name.equals(&quot;test0&quot;)){
+            collector.fail(input);
+        }else {
+            System.out.println(name);
+            collector.ack(input);
+        }
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields(&quot;name&quot;));
+    }
+}
+
+// topology
+public class AckTopology {
+    public static void main(String[] args) {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout(&quot;ackspout&quot;,new AckSpout(),1);
+        builder.setBolt(&quot;ackbolt&quot;,new AckBolt(),2).shuffleGrouping(&quot;ackspout&quot;);
+        Config config = new Config();
+        config.setNumWorkers(1);
+
+        LocalCluster cluster = new LocalCluster();
+        cluster.submitTopology(&quot;test-00&quot;,config,builder.createTopology());
+    }
+}</code></pre><h2 id="drpc"><a href="#drpc" class="headerlink" title="drpc"></a>drpc</h2><p>实现从远程调用storm集群的计算资源，而不需要连接到集群的某一个节点</p>
+<p>参考 <a href="http://blackproof.iteye.com/blog/2221356" target="_blank" rel="noopener">http://blackproof.iteye.com/blog/2221356</a></p>
+<h3 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h3><p>参考 <a href="http://storm.apache.org/releases/1.0.2/Distributed-RPC.html" target="_blank" rel="noopener">http://storm.apache.org/releases/1.0.2/Distributed-RPC.html</a></p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/02/06/kafka-learn/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">kafka 相关概念和使用</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/01/23/flume-note/">
+        <span class="next-text nav-default">flume 全接触</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

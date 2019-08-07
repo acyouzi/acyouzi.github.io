@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="CountDownLatch 和 CyclicBarrier">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/23/java-parellel-countdownlatch-cyclicbarrier/">
+
+
+<meta name="description" content="CountDownLatchCountDownLatch 用于让某一线程等待多个线程完成前置工作后再执行。 有以下几个方法可供使用：  public void await() public boolean await(long timeout, TimeUnit unit) public void countDown()  示例public class CountDownLatchTest {">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CountDownLatch 和 CyclicBarrier">
+<meta property="og:url" content="http://acyouzi.com/2016/11/23/java-parellel-countdownlatch-cyclicbarrier/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="CountDownLatchCountDownLatch 用于让某一线程等待多个线程完成前置工作后再执行。 有以下几个方法可供使用：  public void await() public boolean await(long timeout, TimeUnit unit) public void countDown()  示例public class CountDownLatchTest {">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T13:59:56.478Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CountDownLatch 和 CyclicBarrier">
+<meta name="twitter:description" content="CountDownLatchCountDownLatch 用于让某一线程等待多个线程完成前置工作后再执行。 有以下几个方法可供使用：  public void await() public boolean await(long timeout, TimeUnit unit) public void countDown()  示例public class CountDownLatchTest {">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> CountDownLatch 和 CyclicBarrier - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          CountDownLatch 和 CyclicBarrier
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 23 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="CountDownLatch"><a href="#CountDownLatch" class="headerlink" title="CountDownLatch"></a>CountDownLatch</h3><p>CountDownLatch 用于让某一线程等待多个线程完成前置工作后再执行。</p>
+<p>有以下几个方法可供使用：</p>
+<ul>
+<li>public void await()</li>
+<li>public boolean await(long timeout, TimeUnit unit)</li>
+<li>public void countDown()</li>
+</ul>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><pre><code>public class CountDownLatchTest {
+    public static CountDownLatch end = new CountDownLatch(10);
+    public static Runnable run = ()-&gt;{
+        try {
+            Thread.sleep(new Random().nextInt(10)*1000);
+            System.out.println(&quot;check complete!!!&quot;);
+            end.countDown();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    };
+
+    public static void main(String[] args) throws InterruptedException {
+        List&lt;Thread&gt; list = Stream.generate(()-&gt;new Thread(run)).limit(10).collect(Collectors.toList());
+        list.stream().forEach(t-&gt;t.start());
+
+        end.await();
+        System.out.println(&quot;complete all&quot;);
+    }
+}</code></pre><p>主线程会等待其他十个线程全部调用 end.countDown(); 后再执行。</p>
+<h4 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h4><p>使用共享锁实现，countDown() 方法调用 releaseShared，await 调用 acquireSharedInterruptibly 方法，主要的实现逻辑在 tryAcquireShared tryReleaseShared 中</p>
+<h4 id="tryAcquireShared-与-await-相关"><a href="#tryAcquireShared-与-await-相关" class="headerlink" title="tryAcquireShared 与 await 相关"></a>tryAcquireShared 与 await 相关</h4><p>当状态不为0时一直阻塞。</p>
+<pre><code>protected int tryAcquireShared(int acquires) {
+    return (getState() == 0) ? 1 : -1;
+}</code></pre><h4 id="tryReleaseShared-与-countDown-方法有关。"><a href="#tryReleaseShared-与-countDown-方法有关。" class="headerlink" title="tryReleaseShared 与 countDown 方法有关。"></a>tryReleaseShared 与 countDown 方法有关。</h4><p>每次调用在原来的状态基础上 -1,直到等于0为止</p>
+<pre><code>protected boolean tryReleaseShared(int releases) {
+    // Decrement count; signal when transition to zero
+    for (;;) {
+        int c = getState();
+        if (c == 0)
+            return false;
+        int nextc = c-1;
+        // 当某个线程把 state 搞到 0 ，然后方法会返回 true ,上层的 releaseShared 方法会调用 doReleaseShared 去唤醒等待的线程。
+        if (compareAndSetState(c, nextc))
+            return nextc == 0;
+    }
+}</code></pre><h3 id="CyclicBarrier"><a href="#CyclicBarrier" class="headerlink" title="CyclicBarrier"></a>CyclicBarrier</h3><p>作用跟 countdownlatch 差不多，功能比 CountDownLatch 强大，可以循环使用，可以传入一个 Runnable 用于在等待的多个前置线程做完工作后调用。</p>
+<h4 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h4><pre><code>public class CyclicBarrierTest {
+    public static CyclicBarrier cyclic = new CyclicBarrier(10,()-&gt; System.out.println(&quot;CyclicBarrier await condition complete&quot;));
+    public static Runnable run = ()-&gt;{
+        try {
+            System.out.println(Thread.currentThread().getName());
+            Thread.sleep(new Random().nextInt(10)*1000);
+            cyclic.await();
+            System.out.println(Thread.currentThread().getName());
+            Thread.sleep(new Random().nextInt(10)*1000);
+            cyclic.await();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    };
+
+    public static void main(String[] args) {
+        List&lt;Thread&gt; list = Stream.generate(()-&gt;new Thread(run)).limit(10).collect(Collectors.toList());
+        list.stream().forEach(t-&gt;t.start());
+    }
+}</code></pre><h4 id="实现原理-1"><a href="#实现原理-1" class="headerlink" title="实现原理"></a>实现原理</h4><p>使用重入锁配合 condition 实现</p>
+<pre><code>private int dowait(boolean timed, long nanos)
+    throws InterruptedException, BrokenBarrierException,
+           TimeoutException {
+    final ReentrantLock lock = this.lock;
+    // 获取锁
+    lock.lock();
+    try {
+        final Generation g = generation;
+
+        if (g.broken)
+            throw new BrokenBarrierException();
+
+        if (Thread.interrupted()) {
+            breakBarrier();
+            throw new InterruptedException();
+        }
+        // 当 count == 0 时，执行在使 count 到 0 的那个线程中执行传入的 Runnable 接口，唤醒然后唤醒所有 await 的线程
+        // 重置 count 然后进行下一代的计数
+        int index = --count;
+        if (index == 0) {  // tripped
+            boolean ranAction = false;
+            try {
+                final Runnable command = barrierCommand;
+                if (command != null)
+                    command.run();
+                ranAction = true;
+                nextGeneration();
+                return 0;
+            } finally {
+                if (!ranAction)
+                    breakBarrier();
+            }
+        }
+
+        // 循环，阻塞
+        for (;;) {
+            try {
+                if (!timed)
+                    // Condition 的 await 方法，会让出当前持有的锁。
+                    trip.await();
+                else if (nanos &gt; 0L)
+                    nanos = trip.awaitNanos(nanos);
+            } catch (InterruptedException ie) {
+                if (g == generation &amp;&amp; ! g.broken) {
+                    breakBarrier();
+                    throw ie;
+                } else {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            if (g.broken)
+                throw new BrokenBarrierException();
+
+            if (g != generation)
+                return index;
+
+            if (timed &amp;&amp; nanos &lt;= 0L) {
+                breakBarrier();
+                throw new TimeoutException();
+            }
+        }
+    } finally {
+        lock.unlock();
+    }
+}</code></pre>
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/24/java-parallel-unsafe-lock/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">LockSupport Atomic 包 和 Unsafe 类</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/22/java-parallel-readwritelock/">
+        <span class="next-text nav-default">读写锁解读</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

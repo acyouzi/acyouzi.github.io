@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Docker 容器与容器云-笔记-01-Docker 基本使用">
+
+
+
+
+  <meta name="keywords" content="容器,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/01/12/docker-basis/">
+
+
+<meta name="description" content="以下内容是 Docker 容器与云的前半部分。后半部分正在研读中，kubernetes 的设计思想真的很让人佩服。每个人，哪怕不用这套东西，也应该学习一下他的设计思想. 首先是修补一个问题问题：当我们在 ubuntu 从官方源安装完 docker 后，如果尝试修改 /etc/default/docker 配置文件来改变 Docker daemon 启动参数时发现并不起作用。 原因是 /lib/sy">
+<meta name="keywords" content="容器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker 容器与容器云-笔记-01-Docker 基本使用">
+<meta property="og:url" content="http://acyouzi.com/2017/01/12/docker-basis/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="以下内容是 Docker 容器与云的前半部分。后半部分正在研读中，kubernetes 的设计思想真的很让人佩服。每个人，哪怕不用这套东西，也应该学习一下他的设计思想. 首先是修补一个问题问题：当我们在 ubuntu 从官方源安装完 docker 后，如果尝试修改 /etc/default/docker 配置文件来改变 Docker daemon 启动参数时发现并不起作用。 原因是 /lib/sy">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:03:46.488Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Docker 容器与容器云-笔记-01-Docker 基本使用">
+<meta name="twitter:description" content="以下内容是 Docker 容器与云的前半部分。后半部分正在研读中，kubernetes 的设计思想真的很让人佩服。每个人，哪怕不用这套东西，也应该学习一下他的设计思想. 首先是修补一个问题问题：当我们在 ubuntu 从官方源安装完 docker 后，如果尝试修改 /etc/default/docker 配置文件来改变 Docker daemon 启动参数时发现并不起作用。 原因是 /lib/sy">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Docker 容器与容器云-笔记-01-Docker 基本使用 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Docker 容器与容器云-笔记-01-Docker 基本使用
+        
+      </h1>
+
+      <time class="post-time">
+          Jan 12 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <p>以下内容是 Docker 容器与云的前半部分。后半部分正在研读中，kubernetes 的设计思想真的很让人佩服。每个人，哪怕不用这套东西，也应该学习一下他的设计思想.</p>
+<h3 id="首先是修补一个问题"><a href="#首先是修补一个问题" class="headerlink" title="首先是修补一个问题"></a>首先是修补一个问题</h3><p>问题：当我们在 ubuntu 从官方源安装完 docker 后，如果尝试修改 /etc/default/docker 配置文件来改变 Docker daemon 启动参数时发现并不起作用。</p>
+<p>原因是 /lib/systemd/system/docker.service 文件压根就没有引用EnvironmentFile<br>修改 docker.service 的 [Service] 部分的如下两行</p>
+<pre><code>EnvironmentFile=-/etc/default/docker
+ExecStart=/usr/bin/dockerd $DOCKER_OPTS -H fd://</code></pre><p>然后重启容器</p>
+<pre><code>systemctl daemon-reload
+systemctl restart docker</code></pre><h3 id="Docker-基本知识"><a href="#Docker-基本知识" class="headerlink" title="Docker 基本知识"></a>Docker 基本知识</h3><ol>
+<li><p>docker 使用 namespace 来实现资源隔离，使用 cgroup 做资源限制，namespace 有如下几种</p>
+<pre><code>root@ubuntu:~# ll /proc/$$/ns/
+total 0
+dr-x--x--x 2 root root 0 Jan 16 00:33 ./
+dr-xr-xr-x 9 root root 0 Jan 16 00:21 ../
+lrwxrwxrwx 1 root root 0 Jan 16 00:33 ipc -&gt; ipc:[4026531839]
+lrwxrwxrwx 1 root root 0 Jan 16 00:33 mnt -&gt; mnt:[4026531840]
+lrwxrwxrwx 1 root root 0 Jan 16 00:33 net -&gt; net:[4026531957]
+lrwxrwxrwx 1 root root 0 Jan 16 00:33 pid -&gt; pid:[4026531836]
+lrwxrwxrwx 1 root root 0 Jan 16 00:33 user -&gt; user:[4026531837]
+lrwxrwxrwx 1 root root 0 Jan 16 00:33 uts -&gt; uts:[4026531838]</code></pre></li>
+<li><p>容器的文件系统采用联合挂载，有分层挂载写时复制，内容寻址，联合挂载等几种特性。</p>
+</li>
+<li><p>docker 镜像实际上可以分为三层,默认存放在 /var/lib/docker/image 目录下</p>
+<p> 可读写部分<br> init-layer<br> 只读层</p>
+</li>
+</ol>
+<h3 id="Docker-存储驱动"><a href="#Docker-存储驱动" class="headerlink" title="Docker 存储驱动"></a>Docker 存储驱动</h3><p>docker 支持多种存储驱动，有 devicemapper、aufs、vfs、overlay 等，默认使用 aufs，支持联合挂载( 将不同目录挂载到同一个目录上，这个过程对用户是透明的。一般可读写层在上，下层是只读层)，overlay 是一种新型联合文件系统，理论上性能好于 aufs</p>
+<p>/var/lib/docker/image/aufs 用于存放镜像相关元数据<br>/var/lib/docker/aufs 下边有 diff layers mnt 三个目录</p>
+<pre><code>/mnt 为 aufs 挂载目录
+/diff 为实际数据来源，包括只读层和可读可写层
+/layers 为每层依赖的层描述文件 就是这个层依赖哪些层</code></pre><p>在容器启动时会在 /mnt 和 /diff 目录下见到 /&lt; mountID &gt;-init 层，这个就是上面提到的镜像三层中的 init-layer</p>
+<pre><code>/&lt; mountID &gt;-init 层作为最后一层只读层，用于挂载并重新生成以下文件
+    /dev/pts
+    /dev/shm
+    /proc
+    /sys
+    /.dockerinit
+    /.dockerenv
+    /etc/resolve.conf
+    /etc/host
+    /etc/hostname
+    /dev/console
+    /etc/mtab</code></pre><p>因为这些文件与容器内的环境息息相关，不适合作为打包镜像文件内容，所以这层docker 做了特殊处理，只在启动时自动添加，并且利用用户配置自动生成内容，只用容器在运行过程中被改动，并且 commit 了，才会持久化，否则这一层内容不会被保存。</p>
+<h4 id="存储驱动实验"><a href="#存储驱动实验" class="headerlink" title="存储驱动实验"></a>存储驱动实验</h4><ol>
+<li><p>找到联合挂载中的可读可写层</p>
+<pre><code>查看短ID
+docker ps
+cd /var/lib/docker/ 
+
+查看 mountID
+cat image/aufs/layerdb/mounts/2313d627f4df7b7cec52cd8eb1cd9c628fedfa8b93cbf5095de87d3d9958fc7a/mount-id
+
+得到 mountID 为 4a6f315dfb32c50e7ff54589d52f0f93acf1a74fa50c381bb35d54c6bbb41e3e
+然后找到镜像挂载位置
+cd /var/lib/docker/aufs/mnt/4a6f315dfb32c50e7ff54589d52f0f93acf1a74fa50c381bb35d54c6bbb41e3e 
+
+查看大小， 在容器启动的状态下挂载文件
+du --max-depth=1 -h ./aufs/mnt | grep 4a6f315dfb3 
+
+进入容器，在root 目录下创建一个文件，然后关闭容器
+docker exec -it test /bin/bash
+
+停止后查看镜像挂载目录
+发现 /var/lib/docker/aufs/mnt/4a6f315dfb32c50e7ff54589d52f0f93acf1a74fa50c381bb35d54c6bbb41e3e/  目录空了
+/var/lib/docker/aufs/diff/4a6f315dfb32c50e7ff54589d52f0f93acf1a74fa50c381bb35d54c6bbb41e3e/ 下有一个 root/ 目录，目录下边是我们修改的文件</code></pre><p> 这就是联合挂载的效果</p>
+</li>
+<li><p>init-layer 效果查看</p>
+<pre><code>启动容器，进入容器，修改 /etc/hosts 文件。
+
+然后进入 /var/lib/docker/aufs/diff/4a6f315dfb32c50e7ff54589d52f0f93acf1a74fa50c381bb35d54c6bbb41e3e/ 
+
+发现 这里并没有 etc/hosts 文件
+
+然后进入 /var/lib/docker/aufs/diff/4a6f315dfb32c50e7ff54589d52f0f93acf1a74fa50c381bb35d54c6bbb41e3e-init/
+
+发现存在 etc/hosts 文件，但是没有任何内容。
+
+而且重启容器之后，修改被还原了。</code></pre><p> 这是 init 层的效果</p>
+</li>
+</ol>
+<h3 id="数据卷-volume"><a href="#数据卷-volume" class="headerlink" title="数据卷 volume"></a>数据卷 volume</h3><p>docker volume 命令</p>
+<pre><code>create      Create a volume
+inspect     Display detailed information on one or more volumes
+ls          List volumes
+rm          Remove one or more volumes</code></pre><p>创建容器的时候使用 -v 挂载数据卷,一个容器可挂载多个 volume</p>
+<pre><code>-v /xxx 自动创建一个 volume 并挂载到容器中
+-v volume_name:/xxx 挂载一个已经存在的 volume 
+-v /host/dir:/xxx 挂载一个本地目录到容器 
+--volume-from container-xx  挂载 container-xx 挂载的全部 volume</code></pre><p>dockerfile 中挂载 volume 不能指定要挂载的外部文件。为了可移植性，只能自动创建。</p>
+<h3 id="–link-网络"><a href="#–link-网络" class="headerlink" title="–link 网络"></a>–link 网络</h3><p>容器创建时可以通过 –link 指定关联的容器，然后 Docker 会自动维护映射关系，但是只能链接已经存在的容器，所以使用 link 作为容器间通信的方法必须注意启动顺序。</p>
+<pre><code>--link container:alies</code></pre><p>但是如果自己创建一个网络把容器网络设置为自己创建的网络，在创建容器 link 时就能使用原本不存在的容器了。这里貌似是因为 Docker 更改了处理 link 的方式。</p>
+<pre><code>docker network create nw-link-test
+docker run -it --name link-test-01 --network nw-link-test  --link link-test-02:link-test-02 ubuntu-apt-163:16.04 /bin/bash
+docker run -it --name link-test-02 --network nw-link-test  --link link-test-01:link-test-01 ubuntu-apt-163:16.04 /bin/bash</code></pre><h3 id="容器网络"><a href="#容器网络" class="headerlink" title="容器网络"></a>容器网络</h3><ol>
+<li><p>libnetwork 支持5种内置驱动</p>
+<pre><code>bridge 驱动
+host 驱动 
+    这种模式下容器没有网络协议栈，没有独立的 network namespace
+overlay 驱动 
+    使用 vxlan 方式，适合 SDN ， 需要额外配置一个存储服务，如 etcd zookeeper
+remote驱动
+    调用用户自己实现的网络驱动的插件
+null 驱动
+    这种模式下有自己的 network namespace, 但是没有进行任何网络配置</code></pre></li>
+<li><p>使用 docker network 管理网络</p>
+<pre><code>connect     Connect a container to a network
+create      Create a network
+    可以指定驱动类型，默认是 bridge 
+    创建完，通过 brclt show 可以发现多了一个网桥
+disconnect  Disconnect a container from a network
+inspect     Display detailed information on one or more networks
+ls          List networks
+rm          Remove one or more networks</code></pre></li>
+</ol>
+<h4 id="network-测试"><a href="#network-测试" class="headerlink" title="network 测试"></a>network 测试</h4><p>创建两个网络</p>
+<pre><code>docker network create nw-01
+docker network create nw-02</code></pre><p>创建三个容器分别加入两个网络</p>
+<pre><code>docker run -idt --name test00 --network nw-01 ubuntu:16.04
+docker run -idt --name test01 --network nw-01 ubuntu:16.04
+docker run -idt --name test02 --network nw-02 ubuntu:16.04</code></pre><p>观察容器 ip test00 test01 在一个网段，能相互ping通，test02 ping 不通 test00 test01</p>
+<pre><code>test00 172.19.0.2
+test01 172.19.0.3
+test02 172.20.0.2</code></pre><p>把 test02 加入到 nw-01</p>
+<pre><code>docker network connect nw-01 test02
+然后 test02 多了一块网卡 eth1 ip 172.19.0.4</code></pre><p>可以查看 route 规则,在宿主机上通过 route 命令查看路由表</p>
+<pre><code>route -n 
+
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-91694b4f37a8
+172.19.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-63fb8f706b58
+172.20.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-e63a8cb0655b</code></pre><h4 id="route-命令使用"><a href="#route-命令使用" class="headerlink" title="route 命令使用"></a>route 命令使用</h4><p>直接在命令行下执行route命令来添加路由，不会永久保存，当网卡重启或者机器重启之后，该路由就失效了,可以在/etc/rc.local中添加route命令来保证该路由设置永久有效</p>
+<pre><code>显示当前路由 
+route 
+route -n
+
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.192.2   0.0.0.0         UG    0      0        0 ens33
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+
+U Up表示此路由当前为启动状态
+H Host，表示此网关为一主机
+G Gateway，表示此网关为一路由器
+! 表示此路由当前为关闭状态
+
+route add -net 192.56.76.0 netmask 255.255.255.0 dev eth0
+添加一条route 规则，目标地址是 192.56.76.0 使用设备 eth0
+
+route del -net 192.56.76.0 netmask 255.255.255.0
+删除一条路由
+
+route add -net 10.0.0.0 netmask 255.0.0.0 reject
+拒绝转发一条请求
+
+route add default gw 192.168.192.2
+添加网关 网关是往外部发送的地址，default 代表 0.0.0.0 
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         192.168.192.2   0.0.0.0         UG    0      0        0 ens33
+
+route del default
+删除网关</code></pre><h4 id="docker-daemon-网络启动参数"><a href="#docker-daemon-网络启动参数" class="headerlink" title="docker daemon 网络启动参数"></a>docker daemon 网络启动参数</h4><p>docker daemon 启动时，可以指定的网络配置, 修改 /etc/default/docker 文件的 DOCKER_OPTS</p>
+<pre><code>--bip=172.17.0.1/24 设置 docker0 的 ip 地址和子网范围
+--fixed-cidr=172.17.0.1/25 设置容器的 ip 获取范围，默认是 docker0 的子网范围
+--mtu=BYTES </code></pre><p>也可以自己创建网桥然后在 daemon 启动的时候，使用 –bridge=xxx 来使用指定网桥</p>
+<pre><code>brclt addbr br0
+ifconfig br0 xxx.xxx.xxx.xxx</code></pre><p>也可以跟宿主机的物理网卡相连接</p>
+<pre><code>brclt addif br0 ens33</code></pre><h4 id="iptable-规则"><a href="#iptable-规则" class="headerlink" title="iptable 规则"></a>iptable 规则</h4><p>使用 iptables-save 命令打印 iptables rules . iptables-save — dump iptables rules to stdout</p>
+<p>容器与外部通信</p>
+<pre><code>-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE
+从源地址 172.17.0.0/16 发出，但不是从 docker0 网卡发出的做 snat (源地址转换)
+
+另外涉及多个网卡之间信息的转发，需要设置 ip_forward 参数为 1
+echo 1 &gt; /proc/sys/net/ipv4/ip_forward</code></pre><p>容器之间通信</p>
+<pre><code>-A FORWARD -i docker0 -o docker0 -j ACCEPT</code></pre><p>相关参数 daemon 规则 </p>
+<pre><code>--iptables=true 是否允许修改宿主机的 iptable
+--icc=true 是否允许容器间相互通信
+--ip-forward=true 是否开启 ip_forward 功能
+-h hostname   &quot;/etc/hostname&quot;
+--dns=ipAddr DNS 服务器 &quot;/etc/resolv.conf&quot;</code></pre><h3 id="磁盘限额"><a href="#磁盘限额" class="headerlink" title="磁盘限额"></a>磁盘限额</h3><pre><code>--store-opt 选项只对 devicemapper 文件系统有效</code></pre><ul>
+<li><p>可以通过创建虚拟文件系统来对磁盘进行限额</p>
+<pre><code>创建文件
+dd if=/dev/zero of=./disk-quota.ext4 count=2048 bs=1MB
+格式化
+mkfs -t ext4 -F  disk-quota.ext4
+挂载
+mount -o loop,rw,usrquota,grpquota ./disk-quota.ext4 ./test/</code></pre></li>
+</ul>
+<h3 id="流量限制"><a href="#流量限制" class="headerlink" title="流量限制"></a>流量限制</h3><pre><code>trafic controller </code></pre><h3 id="容器化思维"><a href="#容器化思维" class="headerlink" title="容器化思维"></a>容器化思维</h3><p>容器就是一个进程，只不过拥有相对独立的环境.把容器当成一个进程来对待，这样很容易理解 kubernetes 这个系统的很多概念了</p>
+<h3 id="使用-ip-命令操作-network-namespace"><a href="#使用-ip-命令操作-network-namespace" class="headerlink" title="使用 ip 命令操作 network namespace"></a>使用 ip 命令操作 network namespace</h3><pre><code>ip netns list
+ip netns add NAME
+    会在 /var/run/netns/ 目录下建立一个同名文件
+ip netns set NAME NETNSID
+ip [-all] netns delete [NAME]
+ip netns identify [PID]
+ip netns pids NAME
+
+ip [-all] netns exec [NAME] cmd ...
+    在 namespace 里面执行命令
+
+ip netns monitor
+ip netns list-id
+
+可以进入到 namespace 里面执行命令，使用 exit 退出
+ip netns exec ns-test /bin/bash </code></pre><h4 id="ip-命令配置网卡-联通两个-network-namespace"><a href="#ip-命令配置网卡-联通两个-network-namespace" class="headerlink" title="ip 命令配置网卡 联通两个 network namespace"></a>ip 命令配置网卡 联通两个 network namespace</h4><pre><code>启动设备，在新创建的 network namespace 里面有一个 lo 设备没有启动，最好手动启动
+ip link set dev lo up 
+
+在宿主机上创建 一对网卡
+ip link add veth-a type veth peer name veth-b
+
+ip link show 
+    53: veth-b@veth-a: &lt;BROADCAST,MULTICAST,M-DOWN&gt; mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+        link/ether 0a:b3:58:bc:b8:75 brd ff:ff:ff:ff:ff:ff
+    54: veth-a@veth-b: &lt;BROADCAST,MULTICAST,M-DOWN&gt; mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+        link/ether 2e:d4:69:1d:e8:95 brd ff:ff:ff:ff:ff:ff
+
+把其中一张网卡加入到 ns-test
+ip link set veth-b netns ns-test
+
+查看 ns-test 里面的网络设备
+ip netns exec ns-test ip link show 
+    1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    53: veth-b@if54: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+        link/ether 0a:b3:58:bc:b8:75 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+
+分别启动 veth-a veth-b 
+ip addr add 10.0.0.1/24 dev veth-a
+ip link set veth-a up
+
+ip netns exec ns-test ip addr add 10.0.0.1/24 dev veth-b
+ip netns exec ns-test ip link set veth-b up
+
+验证连通
+ip netns exec ns-test ping 10.0.0.1</code></pre><h4 id="docker-中的-network-namespace"><a href="#docker-中的-network-namespace" class="headerlink" title="docker 中的 network namespace"></a>docker 中的 network namespace</h4><p>linux 下每个进程都有一个特定的 network namespace 位于 $/proc/$pid/ns 目录下 </p>
+<pre><code>lrwxrwxrwx 1 root root 0 Jan 13 06:25 net -&gt; net:[4026531957]</code></pre><p>我们可以通过把docker 进程的这个文件挂载到 /var/run/netns/ 目录下来使用 ip 命令管理这个文件<br>过程</p>
+<pre><code>新建一个容器 
+docker run -idt --name ns-test --network=none ubuntu:16.04
+
+查看PID 
+docker inspect --format &apos;{{ .State.Pid }}&apos; ns-test
+
+建立链接
+ln -s /proc/18638/ns/net /var/run/netns/docker-ns-00
+
+可以发现 多了一个 namespace
+ip netns list 
+ip netns exec docker-ns-00 ip link show
+
+在宿主机上创建 一对网卡
+ip link add veth-a type veth peer name veth-b
+
+brctl addbr br0
+ip addr add 10.0.0.1/24 dev br0
+brctl addif br0 veth-a
+ip link set veth-a up
+
+
+把其中一张网卡加入到 ns-test
+ip link set veth-b netns docker-ns-00
+ip netns exec docker-ns-00 ip link set dev veth-b name eth0
+ip netns exec docker-ns-00 ip link set eth0 up
+ip netns exec docker-ns-00 ip addr add 10.0.0.2/24 dev eth0
+ip netns exec docker-ns-00 ip route add default via 10.0.0.1</code></pre><p>这就是手动配置 Docker 网络的基本方法，可以看到步骤是非常繁琐的，使用 pipework 可以更简单的完成网络配置。</p>
+<h3 id="pipework-使用"><a href="#pipework-使用" class="headerlink" title="pipework 使用"></a>pipework 使用</h3><h4 id="简单使用"><a href="#简单使用" class="headerlink" title="简单使用"></a>简单使用</h4><pre><code>pipework br0 container-name 172.17.2.24/24@172.17.2.1
+@ 后是网关</code></pre><h4 id="macvlan-链接本地网络"><a href="#macvlan-链接本地网络" class="headerlink" title="macvlan 链接本地网络"></a>macvlan 链接本地网络</h4><p>macvlan 是从网卡上虚拟出来的一块新网卡，他和主网卡有不同的 mac 地址，可以独立配置 ip</p>
+<pre><code>pipework ens33 test02 192.168.192.134/24@192.168.192.2
+
+1. 从主机 ens33 上创建一块 macvlan 网卡 ，然后添加到 test02 中
+    ip link add link &quot;$IFNAME&quot; dev &quot;$GUEST_IFNAME&quot; mtu &quot;$MTU&quot; type macvlan mode bridge
+2. 设置 ip 网关  </code></pre><p>因为 macvlan 设备的进出口流量被 macvlan 隔离，主机不能通过 ens33 访问 macvlan 设备。</p>
+<p>解决方法：新建一个 macvlan 把ip 转移到新建的 macvlan 上</p>
+<pre><code>ip link add link ens33 dev eth0m type macvlan mode bridge
+ip link set eth0m up
+ip addr del 192.168.192.132/24 dev ens33
+ip addr add 192.168.192.132/24 dev eth0m</code></pre><h4 id="支持-dhcp"><a href="#支持-dhcp" class="headerlink" title="支持 dhcp"></a>支持 dhcp</h4><pre><code>pipework eth0 container-name dhcp</code></pre><h4 id="支持-Open-vSwitch"><a href="#支持-Open-vSwitch" class="headerlink" title="支持 Open vSwitch"></a>支持 Open vSwitch</h4><p>Open vSwitch 是一个开源的虚拟交换机，创建 Open vSwitch 网桥需要网桥名以 ovs 开头</p>
+<pre><code>ovs-vsctl add-br &quot;$IFNAME&quot;
+ovs-vsctl add-port &quot;$IFNAME&quot; &quot;$LOCAL_IFNAME&quot; ${VLAN:+tag=&quot;$VLAN&quot;}</code></pre><h4 id="支持-vlan"><a href="#支持-vlan" class="headerlink" title="支持 vlan"></a>支持 vlan</h4><p>只有 Open vSwitch 和 macvlan 支持划分 vlan，普通 linux 网桥不可</p>
+<pre><code>pipework osv-br0 container dhcp @12
+@ 后面是 vlan 号</code></pre><h3 id="跨主机通信"><a href="#跨主机通信" class="headerlink" title="跨主机通信"></a>跨主机通信</h3><h4 id="桥接"><a href="#桥接" class="headerlink" title="桥接"></a>桥接</h4><p>容器占用主机IP,大量Docker容器可能引起广播风暴<br>每台机器上的 Docker 容器可能获得相同的IP地址，可以通过 –fixed-cidr 参数限定不同主机的所在的网段。</p>
+<p>方法是将 eth1 桥接到 docker0 上</p>
+<pre><code>可以通过命令
+    brclt addif docker0 eth1
+也可以写在配置文件中
+    auto docker0
+    Iface docker0 inet static
+        address xxx.xxx.xxx.xxx
+        netmask xxx
+        bridge_ports eth1
+        bridge_stp off
+        bridge_fd 0</code></pre><h4 id="直接路由"><a href="#直接路由" class="headerlink" title="直接路由"></a>直接路由</h4><p>在主机中添加静态路由来实现，主机中的 docker 需要在不同的子网<br>配置主机 A 的 docker 在 172.17.1.1/24，主机 B 的 docker 在 172.17.2.1/24<br>在主机 A 上添加路由 目的地地址为 172.17.2.0/24 的包转发到 B<br>在主机 B 上添加路由 目的地地址为 172.17.1.0/24 的包转发到 A</p>
+<pre><code># 主机 A
+ip addr del 172.17.0.1/16 dev docker0
+ip addr add 172.17.1.1/24 dev docker0
+route add  -net 172.17.2.0/24  gw 192.168.192.133
+
+iptables -t nat -F POSTROUTING
+iptables -t nat -A POSTROUTING -s 172.17.1.0/24 ! -d 172.17.0.0/16  -j MASQUERADE
+
+# 主机 B
+ip addr del 172.17.0.1/16 dev docker0
+ip addr add 172.17.2.1/24 dev docker0
+route add -net 172.17.1.0/24 gw 192.168.192.132
+
+iptables -t nat -F POSTROUTING
+iptables -t nat -A POSTROUTING -s 172.17.2.0/24 ! -d 172.17.0.0/16 -j MASQUERADE</code></pre><h3 id="ovs-划分-vlan"><a href="#ovs-划分-vlan" class="headerlink" title="ovs 划分 vlan"></a>ovs 划分 vlan</h3><p>如果不划分 vlan 当网络中机器足够多时会导致广播风暴。</p>
+<h4 id="vlan-相关概念"><a href="#vlan-相关概念" class="headerlink" title="vlan 相关概念"></a>vlan 相关概念</h4><ol>
+<li><p>access 端口： access 端口都会分配一个 vlan id ，标示他所连接的设备属于哪个 vlan .当数据从外界通过 access 端口时，数据本身是不带 tag 的。access 端口给数据打上 tag. 当数据从 access 端口发送时，vid 必须与 端口的 vid 一致，否则丢弃数据，当数据经过 access 端口发出时，会先将帧的 tag 信息去掉再发送。</p>
+</li>
+<li><p>trunk 端口： 声明一组 vid ， 只允许带这些 vid 的数据帧通过，用于交换机之间通信，数据进出都带 tag</p>
+</li>
+</ol>
+<h4 id="单主机-vlan-划分"><a href="#单主机-vlan-划分" class="headerlink" title="单主机 vlan 划分"></a>单主机 vlan 划分</h4><pre><code>docker run -itd --name ovs-test-01 --network none ubuntu:16.04 
+docker run -itd --name ovs-test-02 --network none ubuntu:16.04 
+docker run -itd --name ovs-test-03 --network none ubuntu:16.04 
+docker run -itd --name ovs-test-04 --network none ubuntu:16.04 
+
+pipework ovs0 ovs-test-01 172.20.0.2/24 @100
+pipework ovs0 ovs-test-02 172.20.0.3/24 @100
+pipework ovs0 ovs-test-03 172.20.0.4/24 @200
+pipework ovs0 ovs-test-04 172.20.0.5/24 @200
+
+然后互相 ping 一下试试
+
+可以查看创建的网桥 ovs-vsctl show
+Bridge &quot;ovs0&quot;
+    Port &quot;veth1pl1144&quot;
+        tag: 100
+        Interface &quot;veth1pl1144&quot;
+    Port &quot;veth1pl1226&quot;
+        tag: 200
+        Interface &quot;veth1pl1226&quot;
+    Port &quot;veth1pl1261&quot;
+        tag: 200
+        Interface &quot;veth1pl1261&quot;
+    Port &quot;ovs0&quot;
+        Interface &quot;ovs0&quot;
+            type: internal
+    Port &quot;veth1pl1187&quot;
+        tag: 100
+        Interface &quot;veth1pl1187&quot;</code></pre><h4 id="多主机划分-vlan"><a href="#多主机划分-vlan" class="headerlink" title="多主机划分 vlan"></a>多主机划分 vlan</h4><p>将主机的一个网卡加入到 ovs 交换机中，设为 trunk 端口。</p>
+<pre><code>ip link set eth1 promisc on
+ovs-vsctl add-port ovs0 eth1</code></pre><p>ps: 这种方式我在 vmware 上用两台虚拟机搭建，没有成功，没有找到原因在哪里。可能是网卡的问题？</p>
+<h3 id="Overly-隧道模式"><a href="#Overly-隧道模式" class="headerlink" title="Overly 隧道模式"></a>Overly 隧道模式</h3><p>即将一种协议包装在另一种协议中传输的技术，当前的 Overly 技术主要有 Vxlan 和 NVGRE 技术</p>
+<p>步骤</p>
+<pre><code>1. 设置 DOCKER_OPTS=&quot;--fixed-cidr=172.17.2.0/24&quot;  在 /etc/default/docker 文件中
+2. 有个 bug 导致这个配置不起作用，修改 /lib/systemd/system/docker.service
+    EnvironmentFile=-/etc/default/docker
+    ExecStart=/usr/bin/dockerd $DOCKER_OPTS -H fd://
+3. 配置网络
+    ovs-vsctl add-br ovs0
+    brctl addif docker0 ovs0
+    ovs-vsctl add-port ovs0 gre0 -- set interface gre0 type=gre options:remote_ip=192.168.192.133
+
+另一台主机相同</code></pre><p>ps: 这种方式我也没有成功，同样的问题，跨主机包就不知道跑哪里去了。</p>
+<h3 id="Dockerfile-最佳实践"><a href="#Dockerfile-最佳实践" class="headerlink" title="Dockerfile 最佳实践"></a>Dockerfile 最佳实践</h3><pre><code>RUN 命令
+    推荐 RUN [&quot;executable&quot;,&quot;param&quot;,&quot;param&quot;] 写法
+CMD 命令
+    推荐 CMD [&quot;executable&quot;,&quot;param&quot;,&quot;param&quot;] 写法
+    如果指定多条，只有最后一条会起作用。如果用户在创建容器时指定了命令，会覆盖掉 CMD 指定的命令
+ENTRYPOINT 
+    推荐 ENTRYPOINT [&quot;executable&quot;,&quot;param&quot;,&quot;param&quot;] 写法    
+    run 命令指定的参数能覆盖掉 CMD 但是不能覆盖 ENTRYPOINT
+    如果使用 ENTRYPOINT &quot;command&quot; 这种shell格式，程序运行在 bin/sh -c 中, 不能接收信号
+EXPOSE 
+    不要在 dockerfile 中做端口映射，可以仅仅暴漏端口
+    可以写作 EXPOSE 80  不要写作 EXPOSE 80:8080</code></pre><h3 id="容器监控"><a href="#容器监控" class="headerlink" title="容器监控"></a>容器监控</h3><pre><code>docker stats 显示 cpu 内存 信息 
+docker top 查看容器中进程运行的情况</code></pre><h3 id="常用的监控软件"><a href="#常用的监控软件" class="headerlink" title="常用的监控软件"></a>常用的监控软件</h3><pre><code>cAdvisor,Datadog</code></pre>
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/容器/">容器</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/01/15/spring-00/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">spring 基本使用</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2017/01/11/disruptor/">
+        <span class="next-text nav-default">Disruptor 学习与使用</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

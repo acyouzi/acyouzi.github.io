@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="hexo 快速入门">
+
+
+
+
+  <meta name="keywords" content="工具,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/01/hexo-learning/">
+
+
+<meta name="description" content="安装建议新手在 linux 下开发，可以免去很多乱七八糟的问题一般linux都默认安装有git 但是不会默认带有nodejs,所以我们首先要安装nodejs下载nodejs并解压到/opt目录 wget https://nodejs.org/dist/v6.9.1/node-v6.9.1-linux-x64.tar.xz tar -xvf node-v6.9.1-linux-x64.tar.xz">
+<meta name="keywords" content="工具">
+<meta property="og:type" content="article">
+<meta property="og:title" content="hexo 快速入门">
+<meta property="og:url" content="http://acyouzi.com/2016/11/01/hexo-learning/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="安装建议新手在 linux 下开发，可以免去很多乱七八糟的问题一般linux都默认安装有git 但是不会默认带有nodejs,所以我们首先要安装nodejs下载nodejs并解压到/opt目录 wget https://nodejs.org/dist/v6.9.1/node-v6.9.1-linux-x64.tar.xz tar -xvf node-v6.9.1-linux-x64.tar.xz">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:01:41.156Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hexo 快速入门">
+<meta name="twitter:description" content="安装建议新手在 linux 下开发，可以免去很多乱七八糟的问题一般linux都默认安装有git 但是不会默认带有nodejs,所以我们首先要安装nodejs下载nodejs并解压到/opt目录 wget https://nodejs.org/dist/v6.9.1/node-v6.9.1-linux-x64.tar.xz tar -xvf node-v6.9.1-linux-x64.tar.xz">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> hexo 快速入门 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          hexo 快速入门
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 01 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>建议新手在 linux 下开发，可以免去很多乱七八糟的问题<br>一般linux都默认安装有git 但是不会默认带有nodejs,所以我们首先要安装nodejs<br>下载nodejs并解压到/opt目录</p>
+<pre><code>wget https://nodejs.org/dist/v6.9.1/node-v6.9.1-linux-x64.tar.xz
+tar -xvf node-v6.9.1-linux-x64.tar.xz -C /opt</code></pre><p>配置环境变量</p>
+<pre><code>echo &quot;export NODE_HOME=&apos;/opt/node-v6.9.1-linux-x64&apos;&quot; &gt;&gt; /etc/profile
+echo &quot;export PATH=$PATH:$NODE_HOME/bin&quot; &gt;&gt; /etc/profile
+source /etc/profile</code></pre><p>测试一下nodejs有没有问题</p>
+<pre><code>node -v</code></pre><p>安装 hexo</p>
+<pre><code>npm install -g hexo-cli</code></pre><h3 id="新建项目"><a href="#新建项目" class="headerlink" title="新建项目"></a>新建项目</h3><pre><code>cd ~ &amp;&amp; mkdir my-blog &amp;&amp; cd my-blog
+hexo init ./
+npm install</code></pre><p>现在应该能看到这样的目录结构</p>
+<pre><code>.
+├── _config.yml
+├── package.json
+├── scaffolds
+├── source
+|   ├── _drafts
+|   └── _posts
+└── themes</code></pre><p>下面简单配置一下 _config.yml 的内容，官网给出了比较详细的说明，这里就不在赘述了</p>
+<blockquote>
+<p><a href="https://hexo.io/zh-cn/docs/configuration.html" target="_blank" rel="noopener">https://hexo.io/zh-cn/docs/configuration.html</a></p>
+</blockquote>
+<p>下面启动一下服务器看看页面效果,如果时第一次使用需要先安装 hexo server</p>
+<pre><code>npm install hexo-server --save
+hexo generate
+hexo server</code></pre><p>服务器监听 localhost:4000，现在可以访问一下看看了。</p>
+<h3 id="更换主题"><a href="#更换主题" class="headerlink" title="更换主题"></a>更换主题</h3><p>hexo 能够非常方便的更换主题，首先我们需要找到一些漂亮的主题，可以从github上搜索。<br>这里我们随便选一款主题作为例子</p>
+<pre><code>cd ~/my-blog/themes/
+git clone https://github.com/Haojen/hexo-theme-Anisina.git</code></pre><p>配置 _config.yml 文件</p>
+<pre><code>theme: hexo-theme-Anisina</code></pre><p>然后重新 generate 一下，看下效果</p>
+<pre><code>hexo clean &amp;&amp; hexo generate
+hexo server</code></pre><h3 id="写文章"><a href="#写文章" class="headerlink" title="写文章"></a>写文章</h3><p>如果文章中需要插入一些资源，可以在 _config.yml 把如下配置项设置为true</p>
+<pre><code>post_asset_folder: true</code></pre><p>这样在通过命令行创建文章时，会在同目录下生成一个同名文件夹，可以把本页面用到的资源放到这里面</p>
+<pre><code>hexo new [layout] &lt;title&gt;</code></pre><p>然后就可以去source/_posts文件夹下编辑你的文章了。</p>
+<h3 id="发布到github"><a href="#发布到github" class="headerlink" title="发布到github"></a>发布到github</h3><p>首先需要创建一个gitpage仓库，可以参考官网的教程</p>
+<pre><code>https://pages.github.com/</code></pre><ol>
+<li><p>首先 创建一个以 your-username.github.io 命名的仓库</p>
+</li>
+<li><p>修改 _config.yml 文件的 deploy配置</p>
+<pre><code># Docs: https://hexo.io/docs/deployment.html
+deploy:
+  type: git
+  repo: git@github.com:xxx/xxx.github.io.git
+  branch: master</code></pre></li>
+<li><p>生成和发布</p>
+<pre><code>hexo generate
+npm install hexo-deployer-git --save 
+hexo deploy</code></pre></li>
+<li><p>访问地址 xxx.github.io 看看是不是能看到你发布的网站 ^-^</p>
+</li>
+</ol>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/工具/">工具</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/01/hadoop-docker-cluster/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">使用 docker 搭建 hadoop ha 集群</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

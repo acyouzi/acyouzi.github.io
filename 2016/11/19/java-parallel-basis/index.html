@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="java 并发基础">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/19/java-parallel-basis/">
+
+
+<meta name="description" content="可见性保证共享变量在线程 A 中修改了，线程 B 中立即能够知道 指令重排与有序性指令重排是指在保证串行语义一致性的情况下对指令进行合理的调整，但是这种调整在多线程环境下严重问题。 假设线程 A 有如下指令： int a = 1 flag = true在经过指令重排后可能会变为： flag = true int a = 1这是假设有一个依赖于 flag 来判断变量 a 是否赋值的线程 B 如下：">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java 并发基础">
+<meta property="og:url" content="http://acyouzi.com/2016/11/19/java-parallel-basis/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="可见性保证共享变量在线程 A 中修改了，线程 B 中立即能够知道 指令重排与有序性指令重排是指在保证串行语义一致性的情况下对指令进行合理的调整，但是这种调整在多线程环境下严重问题。 假设线程 A 有如下指令： int a = 1 flag = true在经过指令重排后可能会变为： flag = true int a = 1这是假设有一个依赖于 flag 来判断变量 a 是否赋值的线程 B 如下：">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:00:42.197Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="java 并发基础">
+<meta name="twitter:description" content="可见性保证共享变量在线程 A 中修改了，线程 B 中立即能够知道 指令重排与有序性指令重排是指在保证串行语义一致性的情况下对指令进行合理的调整，但是这种调整在多线程环境下严重问题。 假设线程 A 有如下指令： int a = 1 flag = true在经过指令重排后可能会变为： flag = true int a = 1这是假设有一个依赖于 flag 来判断变量 a 是否赋值的线程 B 如下：">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> java 并发基础 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          java 并发基础
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 19 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="可见性"><a href="#可见性" class="headerlink" title="可见性"></a>可见性</h3><p>保证共享变量在线程 A 中修改了，线程 B 中立即能够知道</p>
+<h3 id="指令重排与有序性"><a href="#指令重排与有序性" class="headerlink" title="指令重排与有序性"></a>指令重排与有序性</h3><p>指令重排是指在保证串行语义一致性的情况下对指令进行合理的调整，但是这种调整在多线程环境下严重问题。</p>
+<p>假设线程 A 有如下指令：</p>
+<pre><code>int a = 1
+flag = true</code></pre><p>在经过指令重排后可能会变为：</p>
+<pre><code>flag = true
+int a = 1</code></pre><p>这是假设有一个依赖于 flag 来判断变量 a 是否赋值的线程 B 如下：</p>
+<pre><code>if flag == true:
+    use a</code></pre><p>这时线程 B 有可能根据 flag 判断 a 已经有值了，但是实际读取时可能 a 还没有赋值。</p>
+<h4 id="为什么要指令重排？"><a href="#为什么要指令重排？" class="headerlink" title="为什么要指令重排？"></a>为什么要指令重排？</h4><p>尽量减少指令流水线中断，更充分的利用cpu资源。</p>
+<h3 id="线程的状态"><a href="#线程的状态" class="headerlink" title="线程的状态"></a>线程的状态</h3><ol>
+<li>NEW     刚创建还没执行</li>
+<li>RUNNABLE  执行状态</li>
+<li>BLOCKED  等待获取锁的状态</li>
+<li>WAITING  无线时间的等待，需要被唤醒。</li>
+<li>TIMED_WAITING 有限时间的等待</li>
+<li>TERMINATED  结束状态</li>
+</ol>
+<h3 id="run-方法"><a href="#run-方法" class="headerlink" title="run 方法"></a>run 方法</h3><p>线程可以继承 Thread 然后重写 Thread 的 run 方法来实现：</p>
+<pre><code>Thread t = new Thread(){
+    @Override
+    public void run() {
+        // 重新 run 方法
+    }
+};</code></pre><p>也可以通过实现 Runnable 接口：</p>
+<pre><code>Thread t = new Thread(new Runnable() {
+    @Override
+    public void run() {
+        // do something
+    }
+});</code></pre><p>这两者没有区别，在调用 t.start() 方法启动线程后会在新的线程中执行 Thread 的 run 方法，而默认的 run 方法就在调用 Runnable 实现的 run 方法。</p>
+<h3 id="线程退出"><a href="#线程退出" class="headerlink" title="线程退出"></a>线程退出</h3><p>首先不能使用 stop 方法，stop 方法强制退出会导致一个不完整的逻辑。可以设置一个退出标志或者在线程中判断 isInterrupted():</p>
+<pre><code>Thread t = new Thread(new Runnable() {
+    public void run() {
+        while (true){
+            if (Thread.currentThread().isInterrupted()){
+                break;
+            }
+            // 业务逻辑
+        }
+    }
+});</code></pre><p>然后在主线程中如果希望结束线程可以调用：</p>
+<pre><code>t.interrupt();</code></pre><p>相比于自己设置的退出标志，中断的功能更为强大，在 sleep 或者 wait 时中断也能起作用，当在主线程调用 interrupt() 时，如果被中断线程正处在 sleep 中，会中断 sleep 并抛出异常，同时中断标记位会被清除，所以需要在捕获异常出再次标记中断然后等待中断逻辑去处理。</p>
+<pre><code>Thread t = new Thread(new Runnable() {
+    public void run() {
+        while (true){
+            if (Thread.currentThread().isInterrupted()){
+                break;
+            }
+
+            try {
+                // sleep 被中断打断并抛出异常
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+});</code></pre><h3 id="wait-amp-amp-notify"><a href="#wait-amp-amp-notify" class="headerlink" title="wait &amp;&amp; notify"></a>wait &amp;&amp; notify</h3><p>wait notify notifyAll 属于 Object 类，所以任何对象都可以调用，但是这几个方法调用必须包含在 synchronzied 语句中。</p>
+<pre><code>public static Object obj = new Object();
+public static void main(String[] args) {
+    Thread t1 = new Thread(new Runnable() {
+        public void run() {
+            synchronized (obj){
+                try {
+                    System.out.println(Thread.currentThread().getId());
+                    obj.wait();
+                    System.out.println(Thread.currentThread().getId());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    });
+
+    Thread t2 = new Thread(new Runnable() {
+        public void run() {
+            synchronized (obj){
+                try {
+                    System.out.println(Thread.currentThread().getId());
+                    Thread.sleep(10000);
+                    obj.notify();
+                    System.out.println(Thread.currentThread().getId());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    });
+    t1.start();
+    t2.start();
+}</code></pre><p>当 notify 把等待的线程唤醒时仍然需要重新获取锁才能继续执行。wait 与 sleep 的区别在于 wait 会释放所持有的锁，sleep 不会。另外需要注意的是 notify 操作不会释放锁，如果我们希望 notify 之后立即执行 wait 线程则不能用这种方法，应该换成 CountDownLatch 实现。</p>
+<h3 id="suspend-amp-amp-resume"><a href="#suspend-amp-amp-resume" class="headerlink" title="suspend &amp;&amp; resume"></a>suspend &amp;&amp; resume</h3><p>suspend 在挂起进程是不会释放任何锁资源，所以不推荐使用。</p>
+<pre><code>Thread.currentThread().suspend();
+Thread.currentThread().resume();</code></pre><h3 id="join"><a href="#join" class="headerlink" title="join"></a>join</h3><p>join()  or  join(long millis) 等待依赖线程结束。</p>
+<p>调用:</p>
+<pre><code>Thread t = new Thread();
+t.start();
+t.join();</code></pre><p>实现：一直调用当前线程的 wait 方法直到所等待的线程死亡。</p>
+<pre><code>if (millis == 0) {
+    while (isAlive()) {
+        wait(0);
+    }
+} else {
+    while (isAlive()) {
+        long delay = millis - now;
+        if (delay &lt;= 0) {
+            break;
+        }
+        wait(delay);
+        now = System.currentTimeMillis() - base;
+    }
+}</code></pre><h3 id="yield"><a href="#yield" class="headerlink" title="yield"></a>yield</h3><p>主动让出 cpu 资源，但是还会再次参与资源争夺。</p>
+<pre><code>public static native void yield();</code></pre><h3 id="volatile-关键字"><a href="#volatile-关键字" class="headerlink" title="volatile 关键字"></a>volatile 关键字</h3><p>volatile 告诉虚拟机这个字段是容易被多个线程改变，然后虚拟机会采取手段保证其对于多线程的可见性。但是 volatile 并不能保证复合操作的原子性。</p>
+<pre><code>public class ThreadTest {
+    public static volatile int i = 0;
+    public static class RunnableImpl implements Runnable{
+        @Override
+        public void run() {
+            for (int j = 0; j &lt; 1000; j++) {
+                i++;
+            }
+        }
+    }
+    public static void main(String[] args) throws InterruptedException {
+        Thread[] ts = new Thread[10];
+        for (int j = 0; j &lt; 10; j++) {
+            ts[j] = new Thread(new RunnableImpl());
+        }
+        Arrays.stream(ts).forEach((Thread t) -&gt; t.start());
+        Arrays.stream(ts).forEach((Thread t) -&gt; {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        System.out.println(i);
+    }
+}</code></pre><p>上面的程序虽然声明了 i 是 volatile 类型，但是因为 i++ 是复合操作，所以结果并不正确。</p>
+<h3 id="守护线程"><a href="#守护线程" class="headerlink" title="守护线程"></a>守护线程</h3><p>守护线程一般是用来完成一些服务性的工作，当用户的工作线程结束时，守护线程无事可做自然也需要退出。这就是守护线程的意思，随着用户线程退出而退出。</p>
+<pre><code>t = new Thread(new RunnableImpl());
+t.setDaemon(true);</code></pre><h3 id="线程优先级"><a href="#线程优先级" class="headerlink" title="线程优先级"></a>线程优先级</h3><p>Thread 中预设了三个优先级</p>
+<pre><code>public final static int MIN_PRIORITY = 1;
+public final static int NORM_PRIORITY = 5;
+public final static int MAX_PRIORITY = 10;</code></pre><p>我们可以使用 setPriority 来设置优先级</p>
+<pre><code>t.setPriority(Thread.MAX_PRIORITY);</code></pre><h3 id="线程异常处理器"><a href="#线程异常处理器" class="headerlink" title="线程异常处理器"></a>线程异常处理器</h3><pre><code>public static class RunnableImpl implements Runnable{
+    @Override
+    public void run() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        throw new RuntimeException(&quot;Test&quot;);
+    }
+}
+public static class ExceptionHandle implements Thread.UncaughtExceptionHandler{
+    public void uncaughtException(Thread t, Throwable e) {
+        System.out.println( t.getName() + &quot; --- down&quot;);
+        e.printStackTrace();
+    }
+}
+public static void main(String[] args) throws InterruptedException {
+    Thread t = new Thread(new RunnableImpl(),&quot;Test&quot;);
+    t.setUncaughtExceptionHandler(new ExceptionHandle());
+    t.start();
+}</code></pre><h3 id="synchronized"><a href="#synchronized" class="headerlink" title="synchronized"></a>synchronized</h3><ul>
+<li>对给定对象加锁</li>
+<li>对实例方法加锁，相当于对当前实例加锁</li>
+<li>对静态方法加锁，相当于对当前类加锁</li>
+</ul>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/20/java-parallel-reentrantlock/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ReentrantLock 重入锁使用与实现</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/19/java-day-to-day-1/">
+        <span class="next-text nav-default">java 杂记(1)</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

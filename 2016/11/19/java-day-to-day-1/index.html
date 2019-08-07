@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="java 杂记(1)">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/19/java-day-to-day-1/">
+
+
+<meta name="description" content="ArrayList 长度ArrayList 使用数组存储，当空间不足时需要动态扩容。扩容是如下的逻辑： private void grow(int minCapacity) {     // overflow-conscious code     int oldCapacity = elementData.length;     int newCapacity = oldCapacity + (o">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java 杂记(1)">
+<meta property="og:url" content="http://acyouzi.com/2016/11/19/java-day-to-day-1/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="ArrayList 长度ArrayList 使用数组存储，当空间不足时需要动态扩容。扩容是如下的逻辑： private void grow(int minCapacity) {     // overflow-conscious code     int oldCapacity = elementData.length;     int newCapacity = oldCapacity + (o">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:01:03.085Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="java 杂记(1)">
+<meta name="twitter:description" content="ArrayList 长度ArrayList 使用数组存储，当空间不足时需要动态扩容。扩容是如下的逻辑： private void grow(int minCapacity) {     // overflow-conscious code     int oldCapacity = elementData.length;     int newCapacity = oldCapacity + (o">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> java 杂记(1) - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          java 杂记(1)
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 19 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="ArrayList-长度"><a href="#ArrayList-长度" class="headerlink" title="ArrayList 长度"></a>ArrayList 长度</h3><p>ArrayList 使用数组存储，当空间不足时需要动态扩容。扩容是如下的逻辑：</p>
+<pre><code>private void grow(int minCapacity) {
+    // overflow-conscious code
+    int oldCapacity = elementData.length;
+    int newCapacity = oldCapacity + (oldCapacity &gt;&gt; 1);
+    if (newCapacity - minCapacity &lt; 0)
+        newCapacity = minCapacity;
+    if (newCapacity - MAX_ARRAY_SIZE &gt; 0)
+        newCapacity = hugeCapacity(minCapacity);
+    // minCapacity is usually close to size, so this is a win:
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}</code></pre><p>每次容量不足，扩大为原来的1.5倍。为了避免经常扩容导致效率低下，可以给数组赋一个较大的初始值 new ArrayList(100);</p>
+<p>Vector 与 ArrayList 类似，但是可以指定扩容多大  Vector(int initialCapacity, int capacityIncrement)</p>
+<h3 id="不要在-finally-块中使用-return"><a href="#不要在-finally-块中使用-return" class="headerlink" title="不要在 finally 块中使用 return"></a>不要在 finally 块中使用 return</h3><p>在 finally 块中使用 return 会导致调用者捕获不到异常。</p>
+<pre><code>public static int test() throws Exception{
+    try {
+        throw new Exception(&quot;throw exception&quot;);
+    }finally {
+        return 0;
+    }
+}
+public static void main(String[] args) {
+    try {
+        test();
+    }catch (Exception e){
+        // catch 部分永远不会执行
+        e.printStackTrace();
+    }
+}</code></pre><h3 id="Arrays-asList"><a href="#Arrays-asList" class="headerlink" title="Arrays.asList()"></a>Arrays.asList()</h3><p>返回的是 java.util.Arrays.ArrayList , 是个静态内部类而不是 java.util.ArrayList 类。这个类没有实现 add 方法，数组是定长的，但是可以对数组中的元素修改、排序等。</p>
+<h3 id="CPU-缓存伪共享问题"><a href="#CPU-缓存伪共享问题" class="headerlink" title="CPU 缓存伪共享问题"></a>CPU 缓存伪共享问题</h3><p>CPU 的三级缓存，读写是以行为单位的，一般缓存行大小是在 64字节。如果两个分别被单独线程频繁更新的变量在一个缓存行内，就会造成缓存失效。可以通过在一个变量周围填充一些字节占满整个缓存行。</p>
+<pre><code>public static class A{
+    long l1,l2,l3,l4,l5,l6,l7;
+    public volatile long value = 0;
+    long r1,r2,r3,r4,r5,r6,r7;
+    public volatile long test = 0;
+}</code></pre><p>经过测试，这种写法，在两个线程分别更新 value 和 test 变量时，速度比一般写法要快一倍还多。</p>
+<h3 id="对象排布规则"><a href="#对象排布规则" class="headerlink" title="对象排布规则"></a>对象排布规则</h3><p>参考<a href="http://www.importnew.com/1305.html" target="_blank" rel="noopener">这篇文章</a></p>
+<p>首先对象头在32位下要占8个字节，在64位下，如果使用 UseCompressedOops 占 12 位，如果不使用占 16 位。<br>规则1：任何对象都是8个字节为粒度进行对齐的。<br>规则2：类属性按照如下优先级进行排列：长整型和双精度类型；整型和浮点型；字符和短整型；字节类型和布尔类型，最后是引用类型。这些属性都按照各自的单位对齐。</p>
+<pre><code>1. 双精度型（doubles）和长整型（longs）
+2. 整型（ints）和浮点型（floats）
+3. 短整型（shorts）和字符型（chars）
+4. 布尔型（booleans）和字节型（bytes）
+5. 引用类型（references）</code></pre><p>规则3：不同类继承关系中的成员不能混合排列。首先按照规则2处理父类中的成员，接着才是子类的成员。<br>规则4：当父类中最后一个成员和子类第一个成员的间隔如果不够4个字节的话，就必须扩展到4个字节的基本单位。<br>规则5：如果子类第一个成员是一个双精度或者长整型，并且父类并没有用完8个字节，JVM会破坏规则2，按照整形（int），短整型（short），字节型（byte），引用类型（reference）的顺序，向未填满的空间填充。</p>
+<h3 id="计算对象占内存大小"><a href="#计算对象占内存大小" class="headerlink" title="计算对象占内存大小"></a>计算对象占内存大小</h3><ol>
+<li><p>通过 Instrumentation 类计算，在类中声明如下函数</p>
+<pre><code>static Instrumentation inst;
+public static void premain(String args, Instrumentation instP) {
+    inst = instP;
+}
+public static long getObjectSize(Object arg0){
+    return inst.getObjectSize(arg0)
+}</code></pre></li>
+<li><p>通过 UNSafe 类计算</p>
+<pre><code>private static Unsafe unsafe;
+static {
+    try {
+        Field filed = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
+        filed.setAccessible(true);
+        unsafe = (Unsafe) filed.get(null);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+public static long getObjectSize( Object arg0 ){
+    // Object[] array = new Object[]{arg0};
+    // long baseOffset = unsafe.arrayBaseOffset(Object[].class);
+    long maxoffset = 0;
+    Class maxfieldClass = null;
+    Class clazz = arg0.getClass();
+    do {
+        for( Field f : clazz.getDeclaredFields()){
+            if( !Modifier.isStatic(f.getModifiers())){
+                maxoffset = unsafe.objectFieldOffset(f);
+                maxfieldClass = f.getType();
+            }
+        }
+    }while ((clazz = clazz.getSuperclass()) != null );
+    long last = (byte.class.equals(maxfieldClass)||(boolean.class.equals(maxfieldClass)))?1:( short.class.equals(maxfieldClass) || char.class.equals(maxfieldClass))?2: (long.class.equals(maxfieldClass)||double.class.equals(maxfieldClass))?8:4;
+    maxoffset = maxoffset + last;
+    long res = 0;
+    if ( maxoffset % 8 != 0 ){
+        res = (maxoffset/8)*8+8;
+    }else {
+        res = maxoffset;
+    }
+    return res;
+}</code></pre></li>
+</ol>
+<p>### </p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/19/java-parallel-basis/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">java 并发基础</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/16/java-day-to-day-0/">
+        <span class="next-text nav-default">java 杂记(0)</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

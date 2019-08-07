@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="Disruptor 学习与使用">
+
+
+
+
+  <meta name="keywords" content="java,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2017/01/11/disruptor/">
+
+
+<meta name="description" content="Disruptor 基本使用public class Main {     static public class MyEvent {         private int val;         public int getVal() {             return val;         }         public void setVal(int val) {">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Disruptor 学习与使用">
+<meta property="og:url" content="http://acyouzi.com/2017/01/11/disruptor/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="Disruptor 基本使用public class Main {     static public class MyEvent {         private int val;         public int getVal() {             return val;         }         public void setVal(int val) {">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:04:02.969Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Disruptor 学习与使用">
+<meta name="twitter:description" content="Disruptor 基本使用public class Main {     static public class MyEvent {         private int val;         public int getVal() {             return val;         }         public void setVal(int val) {">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> Disruptor 学习与使用 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Disruptor 学习与使用
+        
+      </h1>
+
+      <time class="post-time">
+          Jan 11 2017
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="Disruptor-基本使用"><a href="#Disruptor-基本使用" class="headerlink" title="Disruptor 基本使用"></a>Disruptor 基本使用</h3><pre><code>public class Main {
+    static public class MyEvent {
+        private int val;
+        public int getVal() {
+            return val;
+        }
+        public void setVal(int val) {
+            this.val = val;
+        }
+    }
+    public static void main(String[] args) throws InterruptedException {
+        Disruptor&lt;MyEvent&gt; disruptor = new Disruptor&lt;MyEvent&gt;(MyEvent::new, 1024, r -&gt; {
+            return new Thread(r);
+        },ProducerType.SINGLE,new YieldingWaitStrategy());
+        disruptor.handleEventsWith((event, sequence, endOfBatch) -&gt; System.out.println(event.getVal() +&quot; -- &quot;+ sequence +&quot; -- &quot;+ endOfBatch ));
+        disruptor.start();
+
+        //发布事件
+        RingBuffer&lt;MyEvent&gt; ringBuffer = disruptor.getRingBuffer();
+        for(int l = 0; l&lt;100; l++){
+            // 1. 获取下一个可用事件槽
+            long seq = ringBuffer.next();
+            // 2. 获取事件引用
+            MyEvent event = ringBuffer.get(seq);
+            event.setVal(l);
+            // 3. 发布事件
+            ringBuffer.publish(seq);
+            Thread.sleep(1000);
+        }
+        // 阻塞，直到所有消息处理完
+        disruptor.shutdown();
+    }
+}</code></pre><ol>
+<li>创建 Disruptor 对象时的参数 ProducerType 其中 ProducerType.SINGLE 代表只有一个生产者，ProducerType.MULTI 代表有多个生产者</li>
+<li>WaitStrategy 时等待的策略，不同的策略有不同的性能<ul>
+<li>BlockingWaitStrategy 使用重入锁实现阻塞,一旦不满足条件直接挂起。是最低效的策略，但其对CPU的消耗最小并且在各种不同部署环境中能提供更加一致的性能表现</li>
+<li>SleepingWaitStrategy 进行多次尝试获取，当尝试达到一定次数以后 yield 或者 LockSupport 挂起，性能表现跟BlockingWaitStrategy差不多，对CPU的消耗也类似，但其对生产者线程的影响最小，适合用于异步日志类似的场景</li>
+<li>YieldingWaitStrategy 尝试多次，次数可以设置，当达到一定次数，调用 yield，性能是最好的，适合用于低延迟的系统。在要求极高性能且事件处理线数小于CPU逻辑核心数的场景中，推荐使用此策略；例如，CPU开启超线程的特性    </li>
+<li>还有几个策略，可以直接看官方文档 <a href="https://lmax-exchange.github.io/disruptor/docs/index.html" target="_blank" rel="noopener">官方文档</a></li>
+</ul>
+</li>
+<li>注意发布事件的步骤，ringBuffer.publishEvent 是对上述发布事件步骤的封装</li>
+</ol>
+<h3 id="EventProcessor-与-WorkerPool"><a href="#EventProcessor-与-WorkerPool" class="headerlink" title="EventProcessor 与 WorkerPool"></a>EventProcessor 与 WorkerPool</h3><p>这是两种消息消费的模式，Disruptor 实例通过 handleEventsWith 设置使用 EventProcessor，通过 handleEventsWithWorkerPool 设置使用 WorkerPool</p>
+<p>每一个消息都要经过使用 EventProcessor 注册的所有消费者处理，同时使用 EventProcessor 可以设置一些复杂的消费顺序，如一个消息先经过 A 和 B 消费者，在 B 消费者执行完后执行 C 消费者，在 A 和 C 消费者执行完后执行 D 消费者，见下面的例子</p>
+<pre><code>public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Disruptor&lt;MyEvent&gt; disruptor = new Disruptor&lt;MyEvent&gt;(MyEvent::new,1024, r -&gt; {
+            return new Thread(r);
+        }, ProducerType.SINGLE,new YieldingWaitStrategy());
+
+        /**
+        *    A ---------&gt; C
+        *                 |
+        *    B ---------&gt; D
+        * */
+        EventHandler&lt;MyEvent&gt; h_a = (event, sequence, endOfBatch) -&gt; System.out.println(&quot;A handler --- &quot; + event.getVal() + &quot; -- &quot; + sequence + &quot; -- &quot; + endOfBatch);
+        EventHandler&lt;MyEvent&gt; h_b = (event, sequence, endOfBatch) -&gt; System.out.println(&quot;B handler --- &quot; + event.getVal() + &quot; -- &quot; + sequence + &quot; -- &quot; + endOfBatch);
+        EventHandler&lt;MyEvent&gt; h_c = (event, sequence, endOfBatch) -&gt; System.out.println(&quot;C handler --- &quot; + event.getVal() + &quot; -- &quot; + sequence + &quot; -- &quot; + endOfBatch);
+        EventHandler&lt;MyEvent&gt; h_d = (event, sequence, endOfBatch) -&gt; System.out.println(&quot;D handler --- &quot; + event.getVal() + &quot; -- &quot; + sequence + &quot; -- &quot; + endOfBatch);
+
+        disruptor.handleEventsWith(h_a,h_b);
+        disruptor.after(h_a).handleEventsWith(h_c);
+        disruptor.after(h_b,h_c).handleEventsWith(h_d);
+        disruptor.start();
+        RingBuffer&lt;MyEvent&gt; ringbuffer = disruptor.getRingBuffer();
+        // 发布者
+        for (int i = 0; i &lt; 10; i++) {
+            long seq = ringbuffer.next();
+            ringbuffer.get(seq).setVal(i);
+            ringbuffer.publish(seq);
+            Thread.sleep(1000);
+        }
+        disruptor.shutdown();
+    }
+}</code></pre><p>在使用 WorkerPool 时，消息只会被多个消费者中的某一个消费。示例如下</p>
+<pre><code>public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Disruptor&lt;MyEvent&gt; disruptor = new Disruptor&lt;MyEvent&gt;(MyEvent::new,1024, r -&gt; {
+            return new Thread(r);
+        }, ProducerType.SINGLE,new YieldingWaitStrategy());
+
+        WorkHandler&lt;MyEvent&gt; h_1 = event -&gt; System.out.println(Thread.currentThread().getName() + event.getVal());
+        WorkHandler&lt;MyEvent&gt; h_2 = event -&gt; System.out.println(Thread.currentThread().getName() + event.getVal());
+        disruptor.handleEventsWithWorkerPool(h_1,h_2);
+        disruptor.start();
+        RingBuffer&lt;MyEvent&gt; ringbuffer = disruptor.getRingBuffer();
+        for (int i = 0; i &lt; 10; i++) {
+            long seq = ringbuffer.next();
+            ringbuffer.get(seq).setVal(i);
+            ringbuffer.publish(seq);
+            Thread.sleep(1000);
+        }
+        disruptor.shutdown();
+    }
+}</code></pre><h3 id="直接使用-RingBuffer"><a href="#直接使用-RingBuffer" class="headerlink" title="直接使用 RingBuffer"></a>直接使用 RingBuffer</h3><p>在一些简单的应用场景下可以直接使用 RingBuffer 而不是 Disruptor 对象。 RingBuffer 可以直接配合 EventProcessor 或者 WorkerPool 使用，下面是配合 EventProcessor 的例子 </p>
+<pre><code>public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        final RingBuffer&lt;Message&gt; ringBuffer = RingBuffer.createSingleProducer(new EventFactory&lt;Message&gt;() {
+            public Message newInstance() {
+                return new Message();
+            }
+        },1024,new YieldingWaitStrategy());
+
+        SequenceBarrier barrier = ringBuffer.newBarrier();
+        final BatchEventProcessor&lt;Message&gt; processor = new BatchEventProcessor&lt;Message&gt;(ringBuffer, barrier, new EventHandler&lt;Message&gt;() {
+            public void onEvent(Message event, long sequence, boolean endOfBatch) throws Exception {
+                System.out.println(event.getName() + &quot; -- &quot; + sequence + &quot; -- &quot; + endOfBatch);
+            }
+        });
+        ringBuffer.addGatingSequences(processor.getSequence());
+        new Thread(processor).start();
+        long seq;
+        for( int i = 1 ; i &lt; 10 ;i++){
+            seq = ringBuffer.next();
+            ringBuffer.get(seq).setName(&quot;Test&quot;);
+            ringBuffer.publish(seq);
+            Thread.sleep(1000);
+        }
+        processor.halt();
+    }
+} </code></pre><p>RingBuffer 配合 WorkerPool 使用的例子</p>
+<pre><code>public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        final RingBuffer&lt;Message&gt; ringBuffer = RingBuffer.createSingleProducer(new EventFactory&lt;Message&gt;() {
+            public Message newInstance() {
+                return new Message();
+            }
+        },1024,new YieldingWaitStrategy());
+
+        SequenceBarrier barrier = ringBuffer.newBarrier();
+        WorkerPool&lt;Message&gt; workerPool = new WorkerPool&lt;Message&gt;(ringBuffer, barrier, new ExceptionHandler&lt;Message&gt;() {
+            public void handleEventException(Throwable ex, long sequence, Message event) {ex.printStackTrace();}
+            public void handleOnStartException(Throwable ex) {}
+            public void handleOnShutdownException(Throwable ex) {}
+        }, new WorkHandler&lt;Message&gt;() {
+            public void onEvent(Message event) throws Exception {
+                System.out.println(event.getName());
+            }
+        });
+        workerPool.start(Executors.newFixedThreadPool(5));
+
+        long seq;
+        for( int i = 1 ; i &lt; 10 ;i++){
+            seq = ringBuffer.next();
+            ringBuffer.get(seq).setName(&quot;Test&quot;);
+            ringBuffer.publish(seq);
+            Thread.sleep(1000);
+        }
+    }
+}</code></pre><h3 id="Disruptor-多个生产者多个消费者示例"><a href="#Disruptor-多个生产者多个消费者示例" class="headerlink" title="Disruptor 多个生产者多个消费者示例"></a>Disruptor 多个生产者多个消费者示例</h3><p>首先需要编写 Consumer 类实现 WorkHandler 接口</p>
+<pre><code>public class Consumer implements WorkHandler&lt;MyEvent&gt; {
+    @Override
+    public void onEvent(MyEvent event) throws Exception {
+        System.out.println(Thread.currentThread().getName() +&quot; ---- &quot;+ event.getVal());
+    }
+}</code></pre><p>其中 MyEvent 类如下</p>
+<pre><code>public class MyEvent {
+    private int val;
+
+    public int getVal() {
+        return val;
+    }
+
+    public void setVal(int val) {
+        this.val = val;
+    }
+}</code></pre><p>异常处理函数 MyException 的代码</p>
+<pre><code>public class MyException implements ExceptionHandler&lt;MyEvent&gt;{
+    public void handleEventException(Throwable ex, long sequence, MyEvent event) {
+        ex.printStackTrace();
+    }
+    public void handleOnStartException(Throwable ex) {
+        ex.printStackTrace();
+    }
+    public void handleOnShutdownException(Throwable ex) {
+        ex.printStackTrace();
+    }
+}</code></pre><p>下面是主要业务逻辑</p>
+<pre><code>public class Main {
+    public static void main(String[] args) {
+        // 注意生产者类型是 ProducerType.MULTI
+        RingBuffer&lt;MyEvent&gt; ringBuffer = RingBuffer.create(ProducerType.MULTI,MyEvent::new,1024,new YieldingWaitStrategy());
+        SequenceBarrier barrier = ringBuffer.newBarrier();
+        List&lt;Consumer&gt; list = Stream.generate(Consumer::new).limit(4).collect(Collectors.toList());
+        Consumer[] events = new Consumer[0];
+        events = list.toArray(events);
+        WorkerPool&lt;MyEvent&gt; workerPool = new WorkerPool&lt;MyEvent&gt;(ringBuffer, ringBuffer.newBarrier(), new MyException(), events);
+
+        ringBuffer.addGatingSequences(workerPool.getWorkerSequences());
+        workerPool.start(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+
+        List&lt;Thread&gt; threads = Stream.generate(()-&gt;new Thread( ()-&gt;{
+            for (int i = 0; i &lt; 5; i++) {
+                System.out.println(&quot;producer : &quot; + Thread.currentThread().getName());
+                long seq = ringBuffer.next();
+                ringBuffer.get(seq).setVal(i);
+                ringBuffer.publish(seq);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        })).limit(3).collect(Collectors.toList());
+        threads.stream().forEach(thread -&gt; thread.start());
+        threads.stream().forEach(thread -&gt; {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+}</code></pre><ol>
+<li>使用 ProducerType.MULTI 创建 RingBuffer</li>
+<li>创建多个消费者，添加到 WorkerPool 中 </li>
+<li>把门控序列添加的 RingBuffer 中， ringBuffer.addGatingSequences(workerPool.getWorkerSequences())</li>
+<li>创建多个生产者线程</li>
+</ol>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ol>
+<li><p>RingBuffer 是一个特殊的环形队列，这个网上有很多介绍，这个环形队列特殊在没有尾指针，只维护了一个指向下一个可用位置的序号</p>
+</li>
+<li><p>RingBuffer 大小必须是 2 的指数倍</p>
+</li>
+<li><p>缓存填充，链接： <a href="http://ifeve.com/disruptor-cacheline-padding/" target="_blank" rel="noopener">神奇的缓存填充</a></p>
+<pre><code>// cpu 三级缓存都是按行为单位统一刷写，每行大小 64B
+// 为避免缓存失效造成的性能损失，使用不会被修改变量填充满一行缓存行
+public long p1, p2, p3, p4, p5, p6, p7; // cache line padding
+private volatile long cursor = INITIAL_CURSOR_VALUE;
+public long p8, p9, p10, p11, p12, p13, p14; // cache line padding</code></pre></li>
+</ol>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/java/">java</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2017/01/12/docker-basis/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Docker 容器与容器云-笔记-01-Docker 基本使用</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/12/09/java-asm/">
+        <span class="next-text nav-default">Java ASM 库使用及 AOP 示例</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>

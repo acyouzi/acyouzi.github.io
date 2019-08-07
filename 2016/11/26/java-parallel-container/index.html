@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang>
+  <head><meta name="generator" content="Hexo 3.9.0">
+    
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="description" content="线程安全容器">
+
+
+
+
+  <meta name="keywords" content="并发,">
+
+
+
+
+
+  <link rel="alternate" href="/default" title="acyouzi">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1">
+
+
+
+<link rel="canonical" href="http://acyouzi.com/2016/11/26/java-parallel-container/">
+
+
+<meta name="description" content="线程安全容器java.util.concurrent 包下提供了一堆线程安全的容器： ConcurrentHashMap 把自己分成多段，每段是一个小的hashmap 如果写操作发生在不同的段上就能够并发执行。 ConcurrentSkipListMap 跳表实现的 map ConcurrentLinkedDeque 双端队列 ConcurrentLinkedQueue  CopyOnWriteA">
+<meta name="keywords" content="并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程安全容器">
+<meta property="og:url" content="http://acyouzi.com/2016/11/26/java-parallel-container/index.html">
+<meta property="og:site_name" content="acyouzi">
+<meta property="og:description" content="线程安全容器java.util.concurrent 包下提供了一堆线程安全的容器： ConcurrentHashMap 把自己分成多段，每段是一个小的hashmap 如果写操作发生在不同的段上就能够并发执行。 ConcurrentSkipListMap 跳表实现的 map ConcurrentLinkedDeque 双端队列 ConcurrentLinkedQueue  CopyOnWriteA">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2019-08-07T14:00:32.873Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="线程安全容器">
+<meta name="twitter:description" content="线程安全容器java.util.concurrent 包下提供了一堆线程安全的容器： ConcurrentHashMap 把自己分成多段，每段是一个小的hashmap 如果写操作发生在不同的段上就能够并发执行。 ConcurrentSkipListMap 跳表实现的 map ConcurrentLinkedDeque 双端队列 ConcurrentLinkedQueue  CopyOnWriteA">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d310e8dddd6fde3a70c9b10c17107ae3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-89126170-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-89126170-1');
+  </script>
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-4100561021751428",
+      enable_page_level_ads: true
+    });
+  </script>
+
+
+
+    <title> 线程安全容器 - acyouzi </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">acyouzi</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archives
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          线程安全容器
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 26 2016
+      </time>
+    </header>
+    
+            <div class="post-content">
+            <h3 id="线程安全容器"><a href="#线程安全容器" class="headerlink" title="线程安全容器"></a>线程安全容器</h3><p>java.util.concurrent 包下提供了一堆线程安全的容器：</p>
+<pre><code>ConcurrentHashMap 把自己分成多段，每段是一个小的hashmap 如果写操作发生在不同的段上就能够并发执行。
+ConcurrentSkipListMap 跳表实现的 map
+ConcurrentLinkedDeque 双端队列
+ConcurrentLinkedQueue 
+CopyOnWriteArrayList 在读多写少的情况下性能好于 Vector
+ConcurrentSkipListSet 
+CopyOnWriteArraySet</code></pre><h3 id="Collections-synchronizedxxx"><a href="#Collections-synchronizedxxx" class="headerlink" title="Collections.synchronizedxxx"></a>Collections.synchronizedxxx</h3><p>也可以通过 Collections.synchronizedxxx 包装的到一个线程安全容器，如：</p>
+<pre><code>Collections.synchronizedList(new LinkedList&lt;String&gt;());</code></pre><p>这里实现线程安全的方法是对容器的每一个方法都用 synchronized 做同步，如：</p>
+<pre><code>synchronized (mutex) {return list.set(index, element);}</code></pre><h3 id="CopyOnWriteArrayList-的实现"><a href="#CopyOnWriteArrayList-的实现" class="headerlink" title="CopyOnWriteArrayList 的实现"></a>CopyOnWriteArrayList 的实现</h3><p>CopyOnWriteArrayList 的主要是在 add set 等方法中更改链表时，通过 Arrays.copyOf 搞一个副本，在副本上修改，这样就不会影响到读取过程了，操作完成之后再用副本替换原来的链表。</p>
+<pre><code>public boolean add(E e) {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+        Object[] elements = getArray();
+        int len = elements.length;
+        Object[] newElements = Arrays.copyOf(elements, len + 1);
+        newElements[len] = e;
+        setArray(newElements);
+        return true;
+    } finally {
+        lock.unlock();
+    }
+}</code></pre><h3 id="ThreadLocal"><a href="#ThreadLocal" class="headerlink" title="ThreadLocal"></a>ThreadLocal</h3><p>ThreadLocal 用于保存只有当前线程自己可以访问的数据，ThreadLocal 使用内部使用 HashMap 保存数据。</p>
+<pre><code>public void set(T value) {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null)
+        map.set(this, value);
+    else
+        createMap(t, value);
+}
+
+public T get() {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+        ThreadLocalMap.Entry e = map.getEntry(this);
+        if (e != null) {
+            @SuppressWarnings(&quot;unchecked&quot;)
+            T result = (T)e.value;
+            return result;
+        }
+    }
+    return setInitialValue();
+}</code></pre><p>以上代码中 getMap 或者 createMap 得到的是 ThreadLocal 的静态内部类 ThreadLocalMap, 这个类实现了 HashMap, 而且这个类保存的 Entry 实例是一个 WeakReference 的子类</p>
+<pre><code>static class Entry extends WeakReference&lt;ThreadLocal&lt;?&gt;&gt; {
+    /** The value associated with this ThreadLocal. */
+    Object value;
+
+    Entry(ThreadLocal&lt;?&gt; k, Object v) {
+        super(k);
+        value = v;
+    }
+}</code></pre><p>关于 WeakReference 参看：<a href="/2016/11/07/java-reference-objects/#Weak-References">译 · java reference objects</a></p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+		
+		<div class="post-tags">
+		  
+			<a href="/tags/并发/">并发</a>
+		  
+		</div>
+		
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2016/11/27/mysql-01/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">高性能 MySQL 笔记-基础</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2016/11/25/java-parallel-threadpool/">
+        <span class="next-text nav-default">线程池 ThreadPoolExecutor 的使用和实现分析</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2016 -
+    
+    2019
+    <span class="footer-author">acyouzi.</span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>
