@@ -23,7 +23,7 @@
 
 
 
-  <link rel="alternate" href="/default" title="acyouzi">
+  <link rel="alternate" href="/default" title="爱吃柚子">
 
 
 
@@ -40,7 +40,7 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="Spark源码-streaming-02-接收数据的可靠性">
 <meta property="og:url" content="http://acyouzi.com/2017/04/10/spark-streaming-02/index.html">
-<meta property="og:site_name" content="acyouzi">
+<meta property="og:site_name" content="爱吃柚子">
 <meta property="og:description" content="总结 一个疑惑：在接收的数据真正交给 blockmanager 之前是在 blockgenerate 中存储的，这里面并没有任何持久化保证，也就是说如果这个时候宕机是不是当前在 blockgenerate 中还没有交个 blockManager 的数据会全部丢失掉？ 默认情况下 spark streaming 使用 BlockManagerBasedBlockHandler 保存块，并且默认持久化">
 <meta property="og:locale" content="zh">
 <meta property="og:updated_time" content="2019-08-07T13:56:46.535Z">
@@ -99,14 +99,14 @@
 
 
 
-    <title> Spark源码-streaming-02-接收数据的可靠性 - acyouzi </title>
+    <title> Spark源码-streaming-02-接收数据的可靠性 - 爱吃柚子 </title>
   </head>
 
   <body>
     <div id="page">
       <header id="masthead"><div class="site-header-inner">
     <h1 class="site-title">
-        <a href="/." class="logo">acyouzi</a>
+        <a href="/." class="logo">爱吃柚子</a>
     </h1>
 
     <nav id="nav-top">

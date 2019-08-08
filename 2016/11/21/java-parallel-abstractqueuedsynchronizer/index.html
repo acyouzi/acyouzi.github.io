@@ -23,7 +23,7 @@
 
 
 
-  <link rel="alternate" href="/default" title="acyouzi">
+  <link rel="alternate" href="/default" title="爱吃柚子">
 
 
 
@@ -40,7 +40,7 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="AbstractQueuedSynchronizer 的共享锁独占锁实现">
 <meta property="og:url" content="http://acyouzi.com/2016/11/21/java-parallel-abstractqueuedsynchronizer/index.html">
-<meta property="og:site_name" content="acyouzi">
+<meta property="og:site_name" content="爱吃柚子">
 <meta property="og:description" content="AbstractQueuedSynchronizer 可用作为一个同步工具的基础，持有一个volatile int state的属性，表示同步的状态。使用 cas 操作修改 state 保证线程安全。内部使用 LockSupport 来阻塞唤醒线程，维护链表来表示等待锁的队列。 链表的节点结构如下 int waitStatus 有如下四中状态  SIGNAL -1 : 表示节点的后继节点已经阻塞或">
 <meta property="og:locale" content="zh">
 <meta property="og:updated_time" content="2019-08-07T14:00:46.348Z">
@@ -99,14 +99,14 @@
 
 
 
-    <title> AbstractQueuedSynchronizer 的共享锁独占锁实现 - acyouzi </title>
+    <title> AbstractQueuedSynchronizer 的共享锁独占锁实现 - 爱吃柚子 </title>
   </head>
 
   <body>
     <div id="page">
       <header id="masthead"><div class="site-header-inner">
     <h1 class="site-title">
-        <a href="/." class="logo">acyouzi</a>
+        <a href="/." class="logo">爱吃柚子</a>
     </h1>
 
     <nav id="nav-top">
